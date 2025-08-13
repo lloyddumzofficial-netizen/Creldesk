@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { AuthState } from '../types';
+import type { AuthState } from '../types';
 
 interface AuthStore extends AuthState {
   session: Session | null;
