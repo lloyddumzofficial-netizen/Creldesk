@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Download, Upload, X, Move, RotateCcw, ChevronLeft, ChevronRight, Eye, Save, Share2, Palette, Type, Layout, Zap, Check, Plus, Trash2, GripVertical } from 'lucide-react';
 import { User } from '../../types';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
+import { ResumeData } from '../../types';
 import { Card } from '../ui/Card';
 import { cn } from '../../utils/cn';
 
@@ -132,7 +132,7 @@ export const ResumeBuilder: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedTemplate, setSelectedTemplate] = useState('modern-minimalist');
   const [selectedTheme, setSelectedTheme] = useState('blue');
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const { user: authUser } = useAuthStore();
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
       firstName: '',
@@ -351,7 +351,7 @@ export const ResumeBuilder: React.FC = () => {
       // Add metadata for re-import functionality
       pdf.setProperties({
         title: `${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName} Resume`,
-        author: `${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName}`,
+        author: authUser?.email || 'Resume Builder User',
         subject: 'Professional Resume',
         creator: 'Creldesk Resume Builder',
         resumeData: JSON.stringify({
@@ -377,7 +377,7 @@ export const ResumeBuilder: React.FC = () => {
   const generateShareableLink = async () => {
     const shareData = {
       resumeData,
-      selectedTemplate,
+      const shareId = `${authUser?.id || 'anonymous'}-${Date.now()}`;
       selectedTheme,
       profilePhoto
     };
