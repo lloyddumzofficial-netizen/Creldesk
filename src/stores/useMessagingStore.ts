@@ -152,18 +152,44 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       set({ isLoading: true, error: null });
       console.log('Creating/getting conversation with user:', userId);
 
-      // Check if a direct conversation already exists between these two users
-      const { data: existingConversation, error: searchError } = await supabase
-        .rpc('find_direct_conversation', {
-          user1_id: currentUser.id,
-          user2_id: userId
-        });
+      // Check if a conversation already exists between these two users
+      const { data: existingParticipants, error: searchError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .in('user_id', [currentUser.id, userId]);
 
-      if (!searchError && existingConversation && existingConversation.length > 0) {
-        console.log('Found existing conversation:', existingConversation[0].conversation_id);
-        set({ isLoading: false });
-        return existingConversation[0].conversation_id;
+      if (!searchError && existingParticipants) {
+        // Find conversations that have both users
+        const conversationCounts = existingParticipants.reduce((acc, participant) => {
+          acc[participant.conversation_id] = (acc[participant.conversation_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        // Find conversation with exactly 2 participants (both users)
+        const existingConversationId = Object.keys(conversationCounts).find(convId => {
+          return conversationCounts[convId] === 2;
+        });
+        
+        if (existingConversationId) {
+          // Verify this conversation has exactly these two users
+          const { data: allParticipants } = await supabase
+            .from('conversation_participants')
+            .select('user_id')
+            .eq('conversation_id', existingConversationId);
+            
+          if (allParticipants && allParticipants.length === 2) {
+            const participantIds = allParticipants.map(p => p.user_id).sort();
+            const expectedIds = [currentUser.id, userId].sort();
+            
+            if (participantIds[0] === expectedIds[0] && participantIds[1] === expectedIds[1]) {
+              console.log('Found existing conversation:', existingConversationId);
+              set({ isLoading: false });
+              return existingConversationId;
+            }
+          }
+        }
       }
+      
       // No existing conversation found, create a new one
       console.log('Creating new conversation');
       const { data: newConversation, error: createError } = await supabase
@@ -232,11 +258,20 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       set({ isLoading: true, error: null });
       console.log('Loading conversations for user:', currentUser.id);
 
-      // Use the RPC function to get conversations with metadata
-      const { data, error } = await supabase
-        .rpc('get_user_conversations', {
-          target_user_id: currentUser.id
-        });
+      // Get conversations where user is a participant
+      const { data: participantData, error } = await supabase
+        .from('conversation_participants')
+        .select(`
+          conversation_id,
+          conversations!inner (
+            id,
+            created_by,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', currentUser.id)
+        .order('conversations(updated_at)', { ascending: false });
 
       if (error) {
         console.error('Error loading conversations:', error);
@@ -244,16 +279,19 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
         return;
       }
 
-      if (!data || data.length === 0) {
+      if (!participantData || participantData.length === 0) {
         console.log('No conversations found');
         set({ conversations: [] });
         return;
       }
 
-      console.log('Found conversations:', data.length);
+      console.log('Found conversations:', participantData.length);
 
       const conversations: Conversation[] = await Promise.all(
-        data.map(async (conv) => {
+        participantData.map(async (participantRow) => {
+          const conv = participantRow.conversations;
+          const conversationId = conv.id;
+          
           // Get all participants for this conversation
           const { data: allParticipants } = await supabase
             .from('conversation_participants')
@@ -266,7 +304,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
                 avatar_url
               )
             `)
-            .eq('conversation_id', conv.conversation_id);
+            .eq('conversation_id', conversationId);
 
           const participantIds = (allParticipants || []).map(p => p.user_id);
 
@@ -289,25 +327,53 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
             };
           });
 
-          // Create last message object if available
-          const lastMessage = conv.last_message_content ? {
-            id: 'temp',
-            conversation_id: conv.conversation_id,
-            sender_id: 'unknown',
-            content: conv.last_message_content,
-            message_type: 'text' as const,
-            created_at: conv.last_message_created_at || new Date().toISOString(),
-            updated_at: conv.last_message_created_at || new Date().toISOString(),
+          // Get last message for this conversation
+          const { data: lastMessageData } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          const lastMessage = lastMessageData ? {
+            id: lastMessageData.id,
+            conversation_id: lastMessageData.conversation_id,
+            sender_id: lastMessageData.sender_id,
+            content: lastMessageData.content,
+            message_type: lastMessageData.message_type,
+            created_at: lastMessageData.created_at,
+            updated_at: lastMessageData.updated_at,
+            edited_at: lastMessageData.edited_at,
           } : undefined;
 
+          // Get unread count
+          const { data: unreadData } = await supabase
+            .from('conversation_participants')
+            .select('last_read_at')
+            .eq('conversation_id', conversationId)
+            .eq('user_id', currentUser.id)
+            .single();
+
+          let unreadCount = 0;
+          if (unreadData?.last_read_at && lastMessage) {
+            const { count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conversationId)
+              .neq('sender_id', currentUser.id)
+              .gt('created_at', unreadData.last_read_at);
+            unreadCount = count || 0;
+          }
+
           return {
-            id: conv.conversation_id,
+            id: conversationId,
             created_by: conv.created_by,
             created_at: conv.created_at,
             updated_at: conv.updated_at,
             participants,
             last_message: lastMessage,
-            unread_count: Number(conv.unread_count) || 0,
+            unread_count: unreadCount,
           };
         })
       );
