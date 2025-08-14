@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download, Copy, Camera, Upload, QrCode, Smartphone, Printer, X, ExternalLink, RefreshCw } from 'lucide-react';
+import QRCode from 'qrcode';
+import jsQR from 'jsqr';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
@@ -831,8 +833,17 @@ export const QRCodeGenerator: React.FC = () => {
     setError('');
     
     try {
-      const dataUrl = InternalQRCodeGenerator.generate(content, qrOptions);
-      setQrDataUrl(dataUrl);
+      // Generate QR code using the qrcode library
+      const qrDataUrl = await QRCode.toDataURL(content, {
+        width: qrOptions.size,
+        color: {
+          dark: qrOptions.foregroundColor,
+          light: qrOptions.backgroundColor
+        },
+        errorCorrectionLevel: qrOptions.errorCorrectionLevel
+      });
+
+      setQrDataUrl(qrDataUrl);
     } catch (error) {
       console.error('QR Code generation failed:', error);
       setError('Failed to generate QR code. Please try again.');
@@ -870,7 +881,9 @@ export const QRCodeGenerator: React.FC = () => {
     try {
       setError('');
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+          facingMode: 'environment' // Prefer back camera on mobile
+        } 
       });
       
       if (videoRef.current) {
@@ -882,8 +895,13 @@ export const QRCodeGenerator: React.FC = () => {
         scanQRCode();
       }
     } catch (error) {
-      console.error('Error accessing camera:', error);
-      setError('Unable to access camera. Please check permissions.');
+      console.error('Camera access error:', error);
+      if (error instanceof Error) {
+        setError(`Camera access denied: ${error.message}`);
+      } else {
+        setError('Camera access denied. Please allow camera permissions.');
+      }
+      setIsScanning(false);
     }
   };
 
