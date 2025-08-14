@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Check, GripVertical, MoreHorizontal, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { useAppStore } from '../../stores/useAppStore';
 import { cn } from '../../utils/cn';
 
 interface Task {
@@ -48,16 +49,18 @@ export const TaskBoard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [resizingTask, setResizingTask] = useState<string | null>(null);
   
   const dragPreviewRef = useRef<HTMLDivElement>(null);
   const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  
+  // Use app theme instead of local theme state
+  const { theme, toggleTheme } = useAppStore();
+  const isDarkMode = theme === 'dark';
 
   // Initialize from localStorage
   useEffect(() => {
     const savedTasks = localStorage.getItem('kanban-tasks');
-    const savedTheme = localStorage.getItem('kanban-theme');
     
     if (savedTasks) {
       try {
@@ -66,30 +69,12 @@ export const TaskBoard: React.FC = () => {
         console.error('Error loading tasks:', error);
       }
     }
-    
-    if (savedTheme) {
-      setIsDarkMode(savedTheme === 'dark');
-    }
   }, []);
-
-  // Apply theme to document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   // Save to localStorage whenever tasks change
   useEffect(() => {
     localStorage.setItem('kanban-tasks', JSON.stringify(tasks));
   }, [tasks]);
-
-  // Save theme preference
-  useEffect(() => {
-    localStorage.setItem('kanban-theme', isDarkMode ? 'dark' : 'light');
-  }, [isDarkMode]);
 
   const generateId = () => crypto.randomUUID();
 
@@ -290,7 +275,7 @@ export const TaskBoard: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleTheme}
             className="p-2"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
