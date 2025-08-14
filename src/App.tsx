@@ -28,6 +28,7 @@ function App() {
   const { theme, currentTool } = useAppStore();
   const { 
     isAuthenticated, 
+    user,
     initialize, 
     isLoading, 
     checkSessionValidity, 
