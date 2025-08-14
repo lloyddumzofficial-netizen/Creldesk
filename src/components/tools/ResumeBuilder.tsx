@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Download, Upload, X, Move, RotateCcw, ChevronLeft, ChevronRight, Eye, Save, Share2, Palette, Type, Layout, Zap, Check, Plus, Trash2, GripVertical } from 'lucide-react';
-import { User } from '../../types';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
