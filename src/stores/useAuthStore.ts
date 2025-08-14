@@ -63,6 +63,20 @@ export const useAuthStore = create<AuthStore>()(
           
           if (error) {
             console.error('Error getting session:', error);
+            // Handle refresh token not found error
+            if (error.message?.includes('Refresh Token Not Found')) {
+              await supabase.auth.signOut();
+              set({ 
+                session: null,
+                user: null,
+                profile: null,
+                sessionExpiry: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null
+              });
+              return;
+            }
             set({ error: error.message, isLoading: false });
             return;
           }
@@ -285,6 +299,21 @@ export const useAuthStore = create<AuthStore>()(
           
           if (error) {
             console.error('Error refreshing session:', error);
+            // Handle refresh token not found error
+            if (error.message?.includes('Refresh Token Not Found')) {
+              await supabase.auth.signOut();
+              set({
+                session: null,
+                user: null,
+                profile: null,
+                sessionExpiry: null,
+                sessionWarningShown: false,
+                isSessionExpiring: false,
+                isAuthenticated: false,
+                error: null
+              });
+              return;
+            }
             return;
           }
 
