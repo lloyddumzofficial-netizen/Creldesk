@@ -35,7 +35,7 @@ export const LogoEditor: React.FC = () => {
   const [fontFamily, setFontFamily] = useState('Arial');
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
-  // Update canvas size based on container
+  // Update canvas size based on container - RESPONSIVE FIX
   useEffect(() => {
     const updateCanvasSize = () => {
       if (canvasRef.current) {
@@ -43,10 +43,12 @@ export const LogoEditor: React.FC = () => {
         if (container) {
           const containerWidth = container.clientWidth - 32; // Account for padding
           const maxWidth = Math.min(containerWidth, 800);
-          const aspectRatio = 4 / 3;
+          const aspectRatio = canvasSize.width / canvasSize.height;
           const height = maxWidth / aspectRatio;
           
-          setCanvasSize({ width: maxWidth, height: Math.min(height, 600) });
+          // Update canvas display size while keeping logical size
+          canvasRef.current.style.width = `${maxWidth}px`;
+          canvasRef.current.style.height = `${height}px`;
         }
       }
     };
@@ -54,7 +56,7 @@ export const LogoEditor: React.FC = () => {
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
-  }, []);
+  }, [canvasSize]);
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -147,18 +149,13 @@ export const LogoEditor: React.FC = () => {
       {/* Canvas Area */}
       <div className="flex-1 flex flex-col">
         <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-900 rounded-xl p-4 min-h-[400px]">
-          <div className="relative">
+          <div className="relative w-full max-w-full">
             <canvas
               ref={canvasRef}
               width={canvasSize.width}
               height={canvasSize.height}
               onClick={handleCanvasClick}
               className="border-2 border-slate-200 dark:border-slate-700 rounded-lg cursor-crosshair bg-white shadow-lg max-w-full h-auto"
-              style={{ 
-                maxWidth: '100%',
-                height: 'auto',
-                aspectRatio: `${canvasSize.width} / ${canvasSize.height}`
-              }}
             />
           </div>
         </div>
