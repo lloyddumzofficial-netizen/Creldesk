@@ -29,7 +29,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         
         <main className={cn(
           "flex-1 transition-all duration-300 ease-out",
-          "min-h-[calc(100vh-73px-64px)]" // Account for header and footer height
+          "min-h-[calc(100vh-73px-64px)]", // Account for header and footer height
+          "lg:ml-80", // Add left margin for fixed sidebar when expanded
+          sidebarCollapsed && "lg:ml-[72px]" // Smaller margin when collapsed
         )}>
           {children}
         </main>

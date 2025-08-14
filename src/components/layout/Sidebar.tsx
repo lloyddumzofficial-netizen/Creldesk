@@ -39,7 +39,7 @@ export const Sidebar: React.FC = () => {
       animate={sidebarCollapsed ? "collapsed" : "expanded"}
       variants={sidebarVariants}
       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-r border-slate-200/60 dark:border-slate-700/60 flex flex-col shadow-xl backdrop-blur-sm"
+      className="fixed left-0 top-[73px] bottom-0 z-30 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-r border-slate-200/60 dark:border-slate-700/60 flex flex-col shadow-xl backdrop-blur-sm"
     >
       {/* Header */}
       <div className="p-5 border-b border-slate-200/60 dark:border-slate-700/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">

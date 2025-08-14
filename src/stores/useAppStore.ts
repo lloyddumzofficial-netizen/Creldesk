@@ -25,7 +25,7 @@ export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
       // Initial state
-      theme: 'light',
+      theme: 'dark',
       sidebarCollapsed: false,
       currentTool: null,
       projects: [],
