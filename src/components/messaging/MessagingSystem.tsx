@@ -196,7 +196,7 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowUserSearch(true)}
-                placeholder="Search users..."
+                placeholder="Search by name, email, or user ID..."
                 className="pl-10"
               />
             </div>
@@ -206,7 +206,9 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
           {showUserSearch && searchQuery && (
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 max-h-60 overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Search Results</h3>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Search Results ({searchResults.length})
+                </h3>
                 <Button variant="ghost" size="sm" onClick={() => setShowUserSearch(false)}>
                   <X size={16} />
                 </Button>
@@ -215,14 +217,14 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
               {isLoading ? (
                 <div className="text-center py-4">
                   <div className="animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Searching users...</p>
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="space-y-2">
                   {searchResults.map((searchUser) => (
                     <div
                       key={searchUser.id}
-                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-                      onClick={() => handleStartConversation(searchUser.id)}
+                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="relative">
                         <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium">
@@ -241,16 +243,25 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                         <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
                           {searchUser.email}
                         </div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500 font-mono">
+                          ID: {searchUser.id.slice(0, 8)}...
+                        </div>
                       </div>
-                      <Button size="sm" className="text-xs">
+                      <Button 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => handleStartConversation(searchUser.id)}
+                      >
                         Message
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-                  No users found
+                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                  <User size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No users found</p>
+                  <p className="text-xs mt-1">Try searching by name, email, or user ID</p>
                 </div>
               )}
             </div>
@@ -263,28 +274,102 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                 <Users size={16} />
                 <span>Online ({onlineUsers.length})</span>
               </h3>
-              <div className="flex space-x-2 overflow-x-auto">
-                {onlineUsers.slice(0, 8).map((onlineUser) => (
-                  <div
-                    key={onlineUser.id}
-                    className="flex-shrink-0 cursor-pointer"
-                    onClick={() => handleStartConversation(onlineUser.id)}
-                  >
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium">
-                        {onlineUser.avatar_url ? (
-                          <img src={onlineUser.avatar_url} alt={onlineUser.name} className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          onlineUser.name.charAt(0).toUpperCase()
-                        )}
+              {onlineUsers.length > 0 ? (
+                <div className="flex space-x-2 overflow-x-auto pb-2">
+                  {onlineUsers.slice(0, 8).map((onlineUser) => (
+                    <div
+                      key={onlineUser.id}
+                      className="flex-shrink-0 cursor-pointer group"
+                      onClick={() => handleStartConversation(onlineUser.id)}
+                    >
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium group-hover:scale-110 transition-transform">
+                          {onlineUser.avatar_url ? (
+                            <img src={onlineUser.avatar_url} alt={onlineUser.name} className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            onlineUser.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(onlineUser.status)} rounded-full border-2 border-white dark:border-slate-800`} />
                       </div>
-                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(onlineUser.status)} rounded-full border-2 border-white dark:border-slate-800`} />
+                      <div className="text-xs text-center mt-1 text-slate-600 dark:text-slate-400 truncate w-12">
+                        {onlineUser.name.split(' ')[0]}
+                      </div>
                     </div>
-                    <div className="text-xs text-center mt-1 text-slate-600 dark:text-slate-400 truncate w-12">
-                      {onlineUser.name.split(' ')[0]}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-slate-500 dark:text-slate-400">
+                  <div className="text-xs">No users online</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Conversations List */}
+          <div className="flex-1 overflow-y-auto">
+            {conversations.length > 0 ? (
+              <div className="space-y-1 p-2">
+                {conversations.map((conversation) => {
+                  const otherUser = getOtherParticipant(conversation);
+                  if (!otherUser) return null;
+
+                  return (
+                    <div
+                      key={conversation.id}
+                      onClick={() => setCurrentConversation(conversation)}
+                      className={cn(
+                        "p-3 rounded-lg cursor-pointer transition-all duration-200",
+                        currentConversation?.id === conversation.id
+                          ? "bg-primary-100 dark:bg-primary-900/20 shadow-sm"
+                          : "hover:bg-slate-100 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium">
+                            {otherUser.avatar_url ? (
+                              <img src={otherUser.avatar_url} alt={otherUser.name} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              otherUser.name.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(otherUser.status)} rounded-full border-2 border-white dark:border-slate-800`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                              {otherUser.name}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {conversation.last_message && formatTime(conversation.last_message.created_at)}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                              {conversation.last_message?.content || 'No messages yet'}
+                            </div>
+                            {conversation.unread_count > 0 && (
+                              <div className="w-5 h-5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <MessageCircle size={48} className="text-slate-400 mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                  No conversations yet
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                  Search for users above to start a conversation
+                </p>
               </div>
             </div>
           )}
