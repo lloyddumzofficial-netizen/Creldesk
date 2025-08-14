@@ -776,6 +776,24 @@ ${invoiceData.from.name}`;
           </div>
         </Card>
       )}
+        {/* Template Preview */}
+        <Card padding="md">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Template Preview</h3>
+          <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+            <div 
+              className="p-6 text-sm transform scale-75 origin-top-left"
+              style={{ width: '133.33%', height: 'auto' }}
+            >
+              {renderInvoiceTemplate()}
+            </div>
+          </div>
+          <div className="mt-3 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Preview of {settings.template.charAt(0).toUpperCase() + settings.template.slice(1)} template
+            </p>
+          </div>
+        </Card>
+
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Form */}
