@@ -32,10 +32,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setStoreRememberMe(rememberMe);
       const success = await login(formData.email, formData.password);
       if (success) {
-        // Small delay to ensure state is updated
-        setTimeout(() => {
-          onClose();
-        }, 200);
+        onClose();
       }
     } else if (mode === 'register') {
       if (formData.password !== formData.confirmPassword) {
@@ -45,10 +42,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setStoreRememberMe(rememberMe);
       const success = await register(formData.email, formData.password, formData.name);
       if (success) {
-        // Small delay to ensure state is updated
-        setTimeout(() => {
-          onClose();
-        }, 200);
+        onClose();
       }
     } else if (mode === 'reset') {
       const success = await resetPassword(formData.email);
@@ -63,10 +57,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setStoreRememberMe(rememberMe);
     const success = await signInWithGoogle();
     if (success) {
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        onClose();
-      }, 200);
+      onClose();
     }
   };
   const resetForm = () => {

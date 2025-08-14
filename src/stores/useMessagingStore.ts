@@ -89,44 +89,40 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       // Check if query is a UUID (user ID search)
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
       
-      let supabaseQuery = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email, avatar_url')
         .neq('id', currentUser.id) // Exclude current user from search
+        .or(
+          isUUID 
+            ? `id.eq.${query}`
+            : `name.ilike.%${query}%,email.ilike.%${query}%`
+        )
         .limit(10);
-
-      if (isUUID) {
-        console.log('Searching by UUID:', query);
-        supabaseQuery = supabaseQuery.eq('id', query);
-      } else {
-        console.log('Searching by name/email:', query);
-        supabaseQuery = supabaseQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%`);
-      }
-
-      const { data, error } = await supabaseQuery;
 
       if (error) {
         console.error('Error searching users:', error);
-        throw error;
+        set({ error: `Search failed: ${error.message}`, searchResults: [] });
+        return;
       }
 
       console.log('Search results:', data);
 
-      // Get presence data separately for found users
-      const userIds = (data || []).map(profile => profile.id);
-      let presenceData: any[] = [];
-      
-      if (userIds.length > 0) {
-        const { data: presence } = await supabase
-          .from('user_presence')
-          .select('user_id, status, last_seen')
-          .in('user_id', userIds);
-        
-        presenceData = presence || [];
+      if (!data || data.length === 0) {
+        console.log('No users found for query:', query);
+        set({ searchResults: [] });
+        return;
       }
 
-      const users: User[] = (data || []).map(profile => {
-        const userPresence = presenceData.find(p => p.user_id === profile.id);
+      // Get presence data for found users
+      const userIds = data.map(profile => profile.id);
+      const { data: presenceData } = await supabase
+        .from('user_presence')
+        .select('user_id, status, last_seen')
+        .in('user_id', userIds);
+
+      const users: User[] = data.map(profile => {
+        const userPresence = (presenceData || []).find(p => p.user_id === profile.id);
         return {
           id: profile.id,
           name: profile.name,
@@ -141,7 +137,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       set({ searchResults: users });
     } catch (error) {
       console.error('Error searching users:', error);
-      set({ error: `Failed to search users: ${error?.message || 'Unknown error'}` });
+      set({ error: `Failed to search users: ${error.message || 'Unknown error'}`, searchResults: [] });
     } finally {
       set({ isLoading: false });
     }
@@ -154,71 +150,90 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
 
     try {
       set({ isLoading: true, error: null });
+      console.log('Creating/getting conversation with user:', userId);
 
-      // Check if conversation already exists between these two users
-      const { data: existingParticipants, error: searchError } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', currentUser.id);
+      // First, check if a direct conversation already exists between these two users
+      const { data: existingConversations, error: searchError } = await supabase
+        .rpc('find_direct_conversation', {
+          user1_id: currentUser.id,
+          user2_id: userId
+        });
 
-      if (searchError) throw searchError;
+      if (searchError) {
+        console.log('RPC function not available, using manual search');
+        // Fallback to manual search if RPC function doesn't exist
+        const { data: myParticipations } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', currentUser.id);
 
-      let conversationId = null;
-      
-      if (existingParticipants && existingParticipants.length > 0) {
-        // Check each conversation to see if target user is also a participant
-        for (const participant of existingParticipants) {
-          const { data: participants } = await supabase
-            .from('conversation_participants')
-            .select('user_id')
-            .eq('conversation_id', participant.conversation_id);
-          
-          const participantIds = participants?.map(p => p.user_id) || [];
-          
-          // If this conversation has exactly 2 participants and includes both users
-          if (participantIds.length === 2 && 
-              participantIds.includes(userId) && 
-              participantIds.includes(currentUser.id)) {
-            conversationId = participant.conversation_id;
-            break;
+        if (myParticipations && myParticipations.length > 0) {
+          for (const participation of myParticipations) {
+            const { data: allParticipants } = await supabase
+              .from('conversation_participants')
+              .select('user_id')
+              .eq('conversation_id', participation.conversation_id);
+
+            const participantIds = (allParticipants || []).map(p => p.user_id);
+            
+            // Check if this is a direct conversation (exactly 2 participants)
+            if (participantIds.length === 2 && 
+                participantIds.includes(userId) && 
+                participantIds.includes(currentUser.id)) {
+              console.log('Found existing conversation:', participation.conversation_id);
+              set({ isLoading: false });
+              return participation.conversation_id;
+            }
           }
         }
+      } else if (existingConversations && existingConversations.length > 0) {
+        console.log('Found existing conversation via RPC:', existingConversations[0]);
+        set({ isLoading: false });
+        return existingConversations[0];
       }
 
-      // If no existing conversation, create a new one
-      if (!conversationId) {
-        const { data: newConversation, error: createError } = await supabase
-          .from('conversations')
-          .insert({
-            created_by: currentUser.id,
-          })
-          .select()
-          .single();
+      // No existing conversation found, create a new one
+      console.log('Creating new conversation');
+      const { data: newConversation, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          created_by: currentUser.id,
+        })
+        .select()
+        .single();
 
-        if (createError) throw createError;
-        conversationId = newConversation.id;
-
-        // Add both users as participants
-        const { error: participantsError } = await supabase
-          .from('conversation_participants')
-          .insert([
-            {
-              conversation_id: conversationId,
-              user_id: currentUser.id,
-              joined_at: new Date().toISOString(),
-              last_read_at: new Date().toISOString(),
-            },
-            {
-              conversation_id: conversationId,
-              user_id: userId,
-              joined_at: new Date().toISOString(),
-              last_read_at: new Date().toISOString(),
-            }
-          ]);
-
-        if (participantsError) throw participantsError;
+      if (createError) {
+        console.error('Error creating conversation:', createError);
+        throw createError;
       }
 
+      const conversationId = newConversation.id;
+      console.log('Created new conversation:', conversationId);
+
+      // Add both users as participants
+      const { error: participantsError } = await supabase
+        .from('conversation_participants')
+        .insert([
+          {
+            conversation_id: conversationId,
+            user_id: currentUser.id,
+            joined_at: new Date().toISOString(),
+            last_read_at: new Date().toISOString(),
+          },
+          {
+            conversation_id: conversationId,
+            user_id: userId,
+            joined_at: new Date().toISOString(),
+            last_read_at: new Date().toISOString(),
+          }
+        ]);
+
+      if (participantsError) {
+        console.error('Error adding participants:', participantsError);
+        throw participantsError;
+      }
+
+      console.log('Successfully created conversation with participants');
 
       // Reload conversations to get the updated list
       await get().loadConversations();
@@ -226,7 +241,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       return conversationId;
     } catch (error) {
       console.error('Error creating/getting conversation:', error);
-      set({ error: `Failed to create conversation: ${error.message}` });
+      set({ error: `Failed to create conversation: ${error.message || 'Unknown error'}` });
       return null;
     } finally {
       set({ isLoading: false });
@@ -236,52 +251,64 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
   // Load user's conversations
   loadConversations: async () => {
     const { user: currentUser } = useAuthStore.getState();
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, skipping conversation load');
+      return;
+    }
 
     try {
       set({ isLoading: true, error: null });
+      console.log('Loading conversations for user:', currentUser.id);
 
       // Get conversations where current user is a participant
       const { data, error } = await supabase
         .from('conversation_participants')
-        .select('conversation_id, last_read_at')
+        .select(`
+          conversation_id, 
+          last_read_at,
+          conversations!inner (
+            id,
+            created_by,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('user_id', currentUser.id)
-        .order('joined_at', { ascending: false });
+        .order('last_read_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading conversations:', error);
+        throw error;
+      }
 
       if (!data || data.length === 0) {
+        console.log('No conversations found');
         set({ conversations: [] });
         return;
       }
 
-      // Get conversation details
-      const conversationIds = data.map(item => item.conversation_id);
-      const { data: conversationData, error: convError } = await supabase
-        .from('conversations')
-        .select('*')
-        .in('id', conversationIds)
-        .order('updated_at', { ascending: false });
-
-      if (convError) throw convError;
+      console.log('Found conversations:', data.length);
 
       const conversations: Conversation[] = await Promise.all(
-        (conversationData || []).map(async (conv) => {
-          const participantData = data.find(p => p.conversation_id === conv.id);
+        data.map(async (item) => {
+          const conv = item.conversations;
+          if (!conv) return null;
           
           // Get all participants for this conversation
           const { data: allParticipants } = await supabase
             .from('conversation_participants')
-            .select('user_id')
+            .select(`
+              user_id,
+              profiles!inner (
+                id,
+                name,
+                email,
+                avatar_url
+              )
+            `)
             .eq('conversation_id', conv.id);
 
           const participantIds = (allParticipants || []).map(p => p.user_id);
-          
-          // Get participant profiles
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, name, email, avatar_url')
-            .in('id', participantIds);
 
           // Get presence data
           const { data: presenceData } = await supabase
@@ -289,7 +316,8 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
             .select('user_id, status, last_seen')
             .in('user_id', participantIds);
 
-          const participants: User[] = (profiles || []).map(profile => {
+          const participants: User[] = (allParticipants || []).map(participant => {
+            const profile = participant.profiles;
             const presence = (presenceData || []).find(p => p.user_id === profile.id);
             return {
               id: profile.id,
@@ -312,12 +340,12 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
 
           // Calculate unread count
           let unreadCount = 0;
-          if (participantData?.last_read_at) {
+          if (item.last_read_at) {
             const { count } = await supabase
               .from('messages')
               .select('*', { count: 'exact', head: true })
               .eq('conversation_id', conv.id)
-              .gt('created_at', participantData.last_read_at)
+              .gt('created_at', item.last_read_at)
               .neq('sender_id', currentUser.id);
             
             unreadCount = count || 0;
@@ -335,10 +363,16 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
         })
       );
 
-      set({ conversations });
+      // Filter out null conversations and sort by updated_at
+      const validConversations = conversations
+        .filter((conv): conv is Conversation => conv !== null)
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+
+      console.log('Loaded conversations:', validConversations.length);
+      set({ conversations: validConversations });
     } catch (error) {
       console.error('Error loading conversations:', error);
-      set({ error: `Failed to load conversations: ${error.message}` });
+      set({ error: `Failed to load conversations: ${error.message || 'Unknown error'}` });
     } finally {
       set({ isLoading: false });
     }
@@ -488,22 +522,32 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
   // Load online users
   loadOnlineUsers: async () => {
     const { user: currentUser } = useAuthStore.getState();
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, skipping online users load');
+      return;
+    }
 
     try {
+      console.log('Loading online users...');
       // Get all users with their presence status
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email, avatar_url')
         .neq('id', currentUser.id)
-        .limit(20);
+        .limit(50);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        throw profilesError;
+      }
 
       if (!profiles || profiles.length === 0) {
+        console.log('No other users found');
         set({ onlineUsers: [] });
         return;
       }
+
+      console.log('Found profiles:', profiles.length);
 
       // Get presence data for these users
       const { data: presenceData, error: presenceError } = await supabase
@@ -514,6 +558,8 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       if (presenceError) {
         console.warn('Error loading presence data:', presenceError);
       }
+
+      console.log('Presence data:', presenceData?.length || 0);
 
       // Combine profile and presence data
       const users: User[] = profiles.map(profile => {
@@ -532,10 +578,11 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       const onlineUsers = users.filter(u => ['online', 'away', 'busy'].includes(u.status));
       const offlineUsers = users.filter(u => u.status === 'offline').slice(0, 5); // Limit offline users
 
+      console.log('Online users:', onlineUsers.length, 'Offline users:', offlineUsers.length);
       set({ onlineUsers: [...onlineUsers, ...offlineUsers] });
     } catch (error) {
       console.error('Error loading online users:', error);
-      set({ error: `Failed to load users: ${error.message}` });
+      set({ error: `Failed to load users: ${error.message || 'Unknown error'}` });
     }
   },
 

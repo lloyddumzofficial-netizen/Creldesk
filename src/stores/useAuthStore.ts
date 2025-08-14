@@ -58,6 +58,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
         
         try {
+          console.log('Initializing auth store...');
           // Get initial session
           const { data: { session }, error } = await supabase.auth.getSession();
           
@@ -65,6 +66,7 @@ export const useAuthStore = create<AuthStore>()(
             console.error('Error getting session:', error);
             // Handle refresh token not found error
             if (error.message?.includes('Refresh Token Not Found')) {
+              console.log('Refresh token not found, signing out');
               await supabase.auth.signOut();
               set({ 
                 session: null,
@@ -82,18 +84,20 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           if (session) {
+            console.log('Found existing session for user:', session.user.id);
             // Get user profile
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
 
             if (profileError) {
               console.error('Error loading profile:', profileError);
               // Continue without profile if it doesn't exist yet
             }
 
+            console.log('Setting authenticated state');
             set({
               session,
               user: session.user,
@@ -108,6 +112,7 @@ export const useAuthStore = create<AuthStore>()(
             // Add session start event
             get().addSessionEvent('session_restored');
           } else {
+            console.log('No existing session found');
             set({
               session: null,
               user: null,
@@ -347,29 +352,33 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
         
         try {
+          console.log('Starting login process for:', email);
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
 
           if (error) {
+            console.error('Login error:', error);
             set({ error: error.message, isLoading: false });
             return false;
           }
 
           if (data.user && data.session) {
+            console.log('Login successful, loading profile for user:', data.user.id);
             // Get user profile
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', data.user.id)
-              .single();
+              .maybeSingle();
 
             if (profileError) {
               console.error('Error loading profile during login:', profileError);
               // Continue without profile if it doesn't exist yet
             }
 
+            console.log('Setting auth state with user:', data.user.id);
             set({
               user: data.user,
               session: data.session,
@@ -382,13 +391,14 @@ export const useAuthStore = create<AuthStore>()(
             });
             get().addSessionEvent('login_success');
             
-            // Force a small delay to ensure state is properly set
-            await new Promise(resolve => setTimeout(resolve, 100));
+            console.log('Login completed successfully');
             return true;
           }
 
+          console.log('Login failed: no user or session returned');
           return false;
         } catch (error) {
+          console.error('Login exception:', error);
           get().addSessionEvent('login_failed');
           set({ 
             error: 'Login failed. Please try again.', 
@@ -432,6 +442,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
         
         try {
+          console.log('Starting registration process for:', email);
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -443,19 +454,22 @@ export const useAuthStore = create<AuthStore>()(
           });
 
           if (error) {
+            console.error('Registration error:', error);
             set({ error: error.message, isLoading: false });
             return false;
           }
 
           if (data.user) {
+            console.log('Registration successful for user:', data.user.id);
             // If email confirmation is disabled, user will be automatically signed in
             if (data.session) {
+              console.log('User automatically signed in, loading profile');
               // Get user profile
               const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', data.user.id)
-                .single();
+                .maybeSingle();
 
               if (profileError) {
                 console.error('Error loading profile during registration:', profileError);
@@ -473,11 +487,9 @@ export const useAuthStore = create<AuthStore>()(
                 error: null
               });
               get().addSessionEvent('register_success');
-              
-              // Force a small delay to ensure state is properly set
-              await new Promise(resolve => setTimeout(resolve, 100));
             } else {
               // Email confirmation required
+              console.log('Email confirmation required');
               set({
                 isLoading: false,
                 error: null
@@ -489,6 +501,7 @@ export const useAuthStore = create<AuthStore>()(
 
           return false;
         } catch (error) {
+          console.error('Registration exception:', error);
           get().addSessionEvent('register_failed');
           set({ 
             error: 'Registration failed. Please try again.', 

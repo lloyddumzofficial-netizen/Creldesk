@@ -86,8 +86,12 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
 
   // Search users when query changes
   useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) {
+    if (!searchQuery.trim()) {
       useMessagingStore.setState({ searchResults: [] });
+      return;
+    }
+
+    if (searchQuery.length < 2) {
       return;
     }
 
@@ -96,10 +100,10 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
         console.log('Triggering user search for:', searchQuery);
         searchUsers(searchQuery);
       }
-    }, 500); // Increased debounce time
+    }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, searchUsers]);
 
   const handleSendMessage = async () => {
     if (!currentConversation || !newMessage.trim()) return;
@@ -117,11 +121,13 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
   };
 
   const handleStartConversation = async (userId: string) => {
+    console.log('Starting conversation with user:', userId);
     setShowUserSearch(false);
     setSearchQuery('');
     
     const conversationId = await createOrGetConversation(userId);
     if (conversationId) {
+      console.log('Got conversation ID:', conversationId);
       // Reload conversations to get the updated list
       await loadConversations();
       
@@ -129,8 +135,13 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
       const updatedConversations = useMessagingStore.getState().conversations;
       const conversation = updatedConversations.find(c => c.id === conversationId);
       if (conversation) {
+        console.log('Setting current conversation:', conversation.id);
         setCurrentConversation(conversation);
+      } else {
+        console.error('Could not find conversation after creation');
       }
+    } else {
+      console.error('Failed to create/get conversation');
     }
   };
 
@@ -231,6 +242,24 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                   <div className="animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Searching users...</p>
                 </div>
+              ) : error ? (
+                <div className="text-center py-4">
+                  <div className="text-red-500 text-sm mb-2">Search Error</div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{error}</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => {
+                      clearError();
+                      if (searchQuery.length >= 2) {
+                        searchUsers(searchQuery);
+                      }
+                    }}
+                    className="mt-2"
+                  >
+                    Try Again
+                  </Button>
+                </div>
               ) : searchResults.length > 0 ? (
                 <div className="space-y-2">
                   {searchResults.map((searchUser) => (
@@ -273,8 +302,9 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                         size="sm" 
                         className="text-xs"
                         onClick={() => handleStartConversation(searchUser.id)}
+                        disabled={isLoading}
                       >
-                        Message
+                        {isLoading ? 'Loading...' : 'Message'}
                       </Button>
                     </div>
                   ))}
@@ -283,13 +313,10 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                 <div className="text-center py-6 text-slate-500 dark:text-slate-400">
                   <Users size={32} className="mx-auto mb-2 opacity-50" />
                   <p className="text-sm">
-                    {searchQuery.length < 2 ? 'Type at least 2 characters to search' : 'No users found'}
+                    No users found for "{searchQuery}"
                   </p>
                   <p className="text-xs mt-1">
-                    {searchQuery.length < 2 
-                      ? 'Search by name, email, or paste a user ID' 
-                      : 'Try a different search term or check the user ID'
-                    }
+                    Try a different search term or check the spelling
                   </p>
                 </div>
               )}
@@ -330,6 +357,19 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Show message when no users are available */}
+          {!showUserSearch && onlineUsers.length === 0 && !isLoading && (
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                <Users size={32} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No other users found</p>
+                <p className="text-xs mt-1">
+                  Use the search above to find users to message
+                </p>
               </div>
             </div>
           )}
