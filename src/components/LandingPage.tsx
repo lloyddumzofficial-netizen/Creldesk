@@ -180,9 +180,10 @@ export const LandingPage: React.FC = () => {
               <img 
                 src="/Creldesk.png" 
                 alt="Creldesk Logo" 
-                className="h-12 w-auto max-w-[250px] object-contain"
+                className="h-12 w-auto max-w-[250px] object-contain filter brightness-0 invert"
                 width="250"
                 height="48"
+                onLoad={() => console.log('Logo loaded successfully')}
                 onError={(e) => {
                   console.error('Logo failed to load:', e);
                   e.currentTarget.style.display = 'none';

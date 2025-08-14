@@ -112,9 +112,10 @@ export const Header: React.FC = () => {
             <img 
               src="/Creldesk.png" 
               alt="Creldesk Logo" 
-              className="h-10 w-auto max-w-[200px] object-contain"
+              className="h-10 w-auto max-w-[200px] object-contain filter brightness-0 invert"
               width="200"
               height="40"
+              onLoad={() => console.log('Logo loaded successfully')}
               onError={(e) => {
                 console.error('Logo failed to load:', e);
                 e.currentTarget.style.display = 'none';
