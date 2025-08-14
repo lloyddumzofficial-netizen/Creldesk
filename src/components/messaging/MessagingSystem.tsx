@@ -86,11 +86,16 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
 
   // Search users when query changes
   useEffect(() => {
+    if (!query.trim() || query.length < 2) {
+      set({ searchResults: [] });
+      return;
+    }
+
     const debounceTimer = setTimeout(() => {
-      if (searchQuery.trim()) {
+      if (searchQuery.trim() && searchQuery.length >= 2) {
         searchUsers(searchQuery);
       }
-    }, 300);
+    }, 500); // Increased debounce time
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
@@ -111,13 +116,19 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
   };
 
   const handleStartConversation = async (userId: string) => {
+    setShowUserSearch(false);
+    setSearchQuery('');
+    
     const conversationId = await createOrGetConversation(userId);
     if (conversationId) {
-      const conversation = conversations.find(c => c.id === conversationId);
+      // Reload conversations to get the updated list
+      await loadConversations();
+      
+      // Find and set the conversation
+      const updatedConversations = get().conversations;
+      const conversation = updatedConversations.find(c => c.id === conversationId);
       if (conversation) {
         setCurrentConversation(conversation);
-        setShowUserSearch(false);
-        setSearchQuery('');
       }
     }
   };
@@ -196,18 +207,18 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowUserSearch(true)}
-                placeholder="Search by name, email, or user ID..."
+                placeholder="Search users (name, email, or paste user ID)..."
                 className="pl-10"
               />
             </div>
           </div>
 
           {/* User Search Results */}
-          {showUserSearch && searchQuery && (
+          {showUserSearch && searchQuery.length >= 2 && (
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 max-h-60 overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Search Results ({searchResults.length})
+                  {isLoading ? 'Searching...' : `Search Results (${searchResults.length})`}
                 </h3>
                 <Button variant="ghost" size="sm" onClick={() => setShowUserSearch(false)}>
                   <X size={16} />
@@ -243,8 +254,18 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                         <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
                           {searchUser.email}
                         </div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500 font-mono">
-                          ID: {searchUser.id.slice(0, 8)}...
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="text-xs text-slate-400 dark:text-slate-500 font-mono">
+                            ID: {searchUser.id.slice(0, 8)}...
+                          </div>
+                          <div className={`text-xs px-2 py-0.5 rounded-full ${
+                            searchUser.status === 'online' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
+                            searchUser.status === 'away' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                            searchUser.status === 'busy' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+                          }`}>
+                            {getStatusText(searchUser.status)}
+                          </div>
                         </div>
                       </div>
                       <Button 
@@ -260,49 +281,55 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
               ) : (
                 <div className="text-center py-6 text-slate-500 dark:text-slate-400">
                   <Users size={32} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No users found</p>
-                  <p className="text-xs mt-1">Try searching by name, email, or user ID</p>
+                  <p className="text-sm">
+                    {searchQuery.length < 2 ? 'Type at least 2 characters to search' : 'No users found'}
+                  </p>
+                  <p className="text-xs mt-1">
+                    {searchQuery.length < 2 
+                      ? 'Search by name, email, or paste a user ID' 
+                      : 'Try a different search term or check the user ID'
+                    }
+                  </p>
                 </div>
               )}
             </div>
           )}
 
           {/* Online Users */}
-          {!showUserSearch && (
+          {!showUserSearch && onlineUsers.length > 0 && (
             <div className="p-4 border-b border-slate-200 dark:border-slate-700">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center space-x-2">
                 <Users size={16} />
-                <span>Online ({onlineUsers.length})</span>
+                <span>Users ({onlineUsers.filter(u => u.status !== 'offline').length} online)</span>
               </h3>
-              {onlineUsers.length > 0 ? (
-                <div className="flex space-x-2 overflow-x-auto pb-2">
-                  {onlineUsers.slice(0, 8).map((onlineUser) => (
-                    <div
-                      key={onlineUser.id}
-                      className="flex-shrink-0 cursor-pointer group"
-                      onClick={() => handleStartConversation(onlineUser.id)}
-                    >
-                      <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium group-hover:scale-110 transition-transform">
-                          {onlineUser.avatar_url ? (
-                            <img src={onlineUser.avatar_url} alt={onlineUser.name} className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            onlineUser.name.charAt(0).toUpperCase()
-                          )}
-                        </div>
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(onlineUser.status)} rounded-full border-2 border-white dark:border-slate-800`} />
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {onlineUsers.slice(0, 10).map((onlineUser) => (
+                  <div
+                    key={onlineUser.id}
+                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer group"
+                    onClick={() => handleStartConversation(onlineUser.id)}
+                  >
+                    <div className="relative">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium text-sm group-hover:scale-110 transition-transform">
+                        {onlineUser.avatar_url ? (
+                          <img src={onlineUser.avatar_url} alt={onlineUser.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          onlineUser.name.charAt(0).toUpperCase()
+                        )}
                       </div>
-                      <div className="text-xs text-center mt-1 text-slate-600 dark:text-slate-400 truncate w-12">
-                        {onlineUser.name.split(' ')[0]}
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getStatusColor(onlineUser.status)} rounded-full border-2 border-white dark:border-slate-800`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-slate-900 dark:text-slate-100 truncate text-sm">
+                        {onlineUser.name}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {getStatusText(onlineUser.status)}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-                  <div className="text-xs">No users online</div>
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

@@ -78,42 +78,60 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
+      const { user: currentUser } = useAuthStore.getState();
+      if (!currentUser) {
+        set({ isLoading: false, error: 'Not authenticated' });
+        return;
+      }
+
       // Check if query is a UUID (user ID search)
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
       
-      const { data, error } = await supabase
+      let supabaseQuery = supabase
         .from('profiles')
-        .select(`
-          id,
-          name,
-          email,
-          avatar_url,
-          user_presence (
-            status,
-            last_seen
-          )
-        `)
-        .or(isUUID 
-          ? `id.eq.${query}` 
-          : `name.ilike.%${query}%,email.ilike.%${query}%,id.ilike.%${query}%`
-        )
+        .select('id, name, email, avatar_url')
+        .neq('id', currentUser.id) // Exclude current user from search
         .limit(10);
+
+      if (isUUID) {
+        supabaseQuery = supabaseQuery.eq('id', query);
+      } else {
+        supabaseQuery = supabaseQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%`);
+      }
+
+      const { data, error } = await supabaseQuery;
 
       if (error) throw error;
 
-      const users: User[] = (data || []).map(profile => ({
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        avatar_url: profile.avatar_url,
-        status: (profile.user_presence as any)?.[0]?.status || 'offline',
-        last_seen: (profile.user_presence as any)?.[0]?.last_seen || new Date().toISOString(),
-      }));
+      // Get presence data separately for found users
+      const userIds = (data || []).map(profile => profile.id);
+      let presenceData: any[] = [];
+      
+      if (userIds.length > 0) {
+        const { data: presence } = await supabase
+          .from('user_presence')
+          .select('user_id, status, last_seen')
+          .in('user_id', userIds);
+        
+        presenceData = presence || [];
+      }
+
+      const users: User[] = (data || []).map(profile => {
+        const userPresence = presenceData.find(p => p.user_id === profile.id);
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          avatar_url: profile.avatar_url,
+          status: userPresence?.status || 'offline',
+          last_seen: userPresence?.last_seen || new Date().toISOString(),
+        };
+      });
 
       set({ searchResults: users });
     } catch (error) {
       console.error('Error searching users:', error);
-      set({ error: 'Failed to search users' });
+      set({ error: `Failed to search users: ${error.message}` });
     } finally {
       set({ isLoading: false });
     }
@@ -127,34 +145,31 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // First check if conversation already exists
-      const { data: existingConversation, error: searchError } = await supabase
+      // Check if conversation already exists between these two users
+      const { data: existingParticipants, error: searchError } = await supabase
         .from('conversation_participants')
-        .select(`
-          conversation_id,
-          conversations!inner (
-            id,
-            created_by,
-            created_at,
-            updated_at
-          )
-        `)
+        .select('conversation_id')
         .eq('user_id', currentUser.id);
 
       if (searchError) throw searchError;
 
-      // Check if any of these conversations include the target user
       let conversationId = null;
-      if (existingConversation) {
-        for (const conv of existingConversation) {
+      
+      if (existingParticipants && existingParticipants.length > 0) {
+        // Check each conversation to see if target user is also a participant
+        for (const participant of existingParticipants) {
           const { data: participants } = await supabase
             .from('conversation_participants')
             .select('user_id')
-            .eq('conversation_id', conv.conversation_id);
+            .eq('conversation_id', participant.conversation_id);
           
           const participantIds = participants?.map(p => p.user_id) || [];
-          if (participantIds.includes(userId) && participantIds.includes(currentUser.id)) {
-            conversationId = conv.conversation_id;
+          
+          // If this conversation has exactly 2 participants and includes both users
+          if (participantIds.length === 2 && 
+              participantIds.includes(userId) && 
+              participantIds.includes(currentUser.id)) {
+            conversationId = participant.conversation_id;
             break;
           }
         }
@@ -180,17 +195,20 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
             {
               conversation_id: conversationId,
               user_id: currentUser.id,
+              joined_at: new Date().toISOString(),
+              last_read_at: new Date().toISOString(),
             },
             {
               conversation_id: conversationId,
               user_id: userId,
+              joined_at: new Date().toISOString(),
+              last_read_at: new Date().toISOString(),
             }
           ]);
 
         if (participantsError) throw participantsError;
       }
 
-      if (error) throw error;
 
       // Reload conversations to get the updated list
       await get().loadConversations();
@@ -198,7 +216,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       return conversationId;
     } catch (error) {
       console.error('Error creating/getting conversation:', error);
-      set({ error: 'Failed to create conversation' });
+      set({ error: `Failed to create conversation: ${error.message}` });
       return null;
     } finally {
       set({ isLoading: false });
@@ -213,89 +231,83 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // Get conversations where user is a participant
+      // Get conversations where current user is a participant
       const { data, error } = await supabase
         .from('conversation_participants')
-        .select(`
-          conversation_id,
-          conversations!inner (
-            id,
-            created_by,
-            created_at,
-            updated_at
-          )
-        `)
+        .select('conversation_id, last_read_at')
         .eq('user_id', currentUser.id)
-        .order('conversations(updated_at)', { ascending: false });
+        .order('joined_at', { ascending: false });
 
       if (error) throw error;
 
+      if (!data || data.length === 0) {
+        set({ conversations: [] });
+        return;
+      }
+
+      // Get conversation details
+      const conversationIds = data.map(item => item.conversation_id);
+      const { data: conversationData, error: convError } = await supabase
+        .from('conversations')
+        .select('*')
+        .in('id', conversationIds)
+        .order('updated_at', { ascending: false });
+
+      if (convError) throw convError;
+
       const conversations: Conversation[] = await Promise.all(
-        (data || []).map(async (item) => {
-          const conv = item.conversations;
+        (conversationData || []).map(async (conv) => {
+          const participantData = data.find(p => p.conversation_id === conv.id);
           
           // Get all participants for this conversation
-          const { data: participantData } = await supabase
+          const { data: allParticipants } = await supabase
             .from('conversation_participants')
-            .select(`
-              user_id,
-              profiles (
-                id,
-                name,
-                email,
-                avatar_url,
-                user_presence (
-                  status,
-                  last_seen
-                )
-              )
-            `)
+            .select('user_id')
             .eq('conversation_id', conv.id);
 
-          const participants: User[] = (participantData || [])
-            .filter(cp => cp.profiles)
-            .map(cp => ({
-              id: cp.profiles.id,
-              name: cp.profiles.name,
-              email: cp.profiles.email,
-              avatar_url: cp.profiles.avatar_url,
-              status: (cp.profiles.user_presence as any)?.[0]?.status || 'offline',
-              last_seen: (cp.profiles.user_presence as any)?.[0]?.last_seen || new Date().toISOString(),
-            }));
+          const participantIds = (allParticipants || []).map(p => p.user_id);
+          
+          // Get participant profiles
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name, email, avatar_url')
+            .in('id', participantIds);
+
+          // Get presence data
+          const { data: presenceData } = await supabase
+            .from('user_presence')
+            .select('user_id, status, last_seen')
+            .in('user_id', participantIds);
+
+          const participants: User[] = (profiles || []).map(profile => {
+            const presence = (presenceData || []).find(p => p.user_id === profile.id);
+            return {
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              avatar_url: profile.avatar_url,
+              status: presence?.status || 'offline',
+              last_seen: presence?.last_seen || new Date().toISOString(),
+            };
+          });
 
           // Get last message
           const { data: lastMessage } = await supabase
             .from('messages')
-            .select(`
-              *,
-              sender:profiles (
-                id,
-                name,
-                email,
-                avatar_url
-              )
-            )
-            `)
+            .select('*')
             .eq('conversation_id', conv.id)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
 
-          // Get unread count for current user
-          const { data: participantInfo } = await supabase
-            .from('conversation_participants')
-            .select('last_read_at')
-            .eq('conversation_id', conv.id)
-            .eq('user_id', currentUser.id)
-            .single();
-
+          // Calculate unread count
           let unreadCount = 0;
-          if (participantInfo?.last_read_at) {
+          if (participantData?.last_read_at) {
             const { count } = await supabase
               .from('messages')
               .select('*', { count: 'exact', head: true })
               .eq('conversation_id', conv.id)
-              .gt('created_at', participantInfo.last_read_at)
+              .gt('created_at', participantData.last_read_at)
               .neq('sender_id', currentUser.id);
             
             unreadCount = count || 0;
@@ -316,7 +328,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       set({ conversations });
     } catch (error) {
       console.error('Error loading conversations:', error);
-      set({ error: 'Failed to load conversations' });
+      set({ error: `Failed to load conversations: ${error.message}` });
     } finally {
       set({ isLoading: false });
     }
@@ -469,37 +481,51 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
     if (!currentUser) return;
 
     try {
-      const { data, error } = await supabase
+      // Get all users with their presence status
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar_url')
+        .neq('id', currentUser.id)
+        .limit(20);
+
+      if (profilesError) throw profilesError;
+
+      if (!profiles || profiles.length === 0) {
+        set({ onlineUsers: [] });
+        return;
+      }
+
+      // Get presence data for these users
+      const { data: presenceData, error: presenceError } = await supabase
         .from('user_presence')
-        .select(`
-          user_id,
-          status,
-          last_seen,
-          profiles (
-            id,
-            name,
-            email,
-            avatar_url
-          )
-        `)
-        .in('status', ['online', 'away', 'busy'])
-        .neq('user_id', currentUser.id)
-        .order('last_seen', { ascending: false });
+        .select('user_id, status, last_seen')
+        .in('user_id', profiles.map(p => p.id));
 
-      if (error) throw error;
+      if (presenceError) {
+        console.warn('Error loading presence data:', presenceError);
+      }
 
-      const users: User[] = (data || []).map(presence => ({
-        id: (presence.profiles as any).id,
-        name: (presence.profiles as any).name,
-        email: (presence.profiles as any).email,
-        avatar_url: (presence.profiles as any).avatar_url,
-        status: presence.status,
-        last_seen: presence.last_seen,
-      }));
+      // Combine profile and presence data
+      const users: User[] = profiles.map(profile => {
+        const presence = (presenceData || []).find(p => p.user_id === profile.id);
+        return {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          avatar_url: profile.avatar_url,
+          status: presence?.status || 'offline',
+          last_seen: presence?.last_seen || new Date().toISOString(),
+        };
+      });
 
-      set({ onlineUsers: users });
+      // Filter to show only online users first, then others
+      const onlineUsers = users.filter(u => ['online', 'away', 'busy'].includes(u.status));
+      const offlineUsers = users.filter(u => u.status === 'offline').slice(0, 5); // Limit offline users
+
+      set({ onlineUsers: [...onlineUsers, ...offlineUsers] });
     } catch (error) {
       console.error('Error loading online users:', error);
+      set({ error: `Failed to load users: ${error.message}` });
     }
   },
 
