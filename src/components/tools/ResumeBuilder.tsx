@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, Eye, Palette, User, Briefcase, GraduationCap, Award, Globe, Plus, Trash2, Sparkles, FileText, Code, Zap } from 'lucide-react';
+import { Download, Eye, Palette, User, Briefcase, GraduationCap, Award, Globe, Plus, Trash2, Sparkles, FileText, Code, Zap, Upload, Camera, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
@@ -66,6 +66,7 @@ export const ResumeBuilder: React.FC = () => {
       location: '',
       website: '',
       linkedin: '',
+      profileImage: '',
     },
     objective: '',
     summary: '',
@@ -82,8 +83,42 @@ export const ResumeBuilder: React.FC = () => {
   });
 
   const previewRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [previewScale, setPreviewScale] = useState(0.6);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        setResumeData(prev => ({
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            profileImage: imageUrl
+          }
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setResumeData(prev => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        profileImage: ''
+      }
+    }));
+  };
 
   // Auto-resize preview
   useEffect(() => {
@@ -301,6 +336,23 @@ export const ResumeBuilder: React.FC = () => {
           <div style={{ ...commonStyles, padding: '40px', maxWidth: '794px', minHeight: '1123px', backgroundColor: 'white' }}>
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: `3px solid ${accentColor}`, paddingBottom: '20px' }}>
+              {resumeData.personalInfo.profileImage && (
+                <div style={{ marginBottom: '24px' }}>
+                  <img 
+                    src={resumeData.personalInfo.profileImage} 
+                    alt="Profile" 
+                    style={{
+                      width: '128px',
+                      height: '128px',
+                      borderRadius: '50%',
+                      margin: '0 auto',
+                      objectFit: 'cover',
+                      border: `4px solid ${accentColor}`,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                </div>
+              )}
               <h1 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 8px 0', color: accentColor }}>
                 {resumeData.personalInfo.fullName || 'Your Name'}
               </h1>
@@ -525,7 +577,20 @@ export const ResumeBuilder: React.FC = () => {
                   color: 'white',
                   fontWeight: '600'
                 }}>
-                  {resumeData.personalInfo.fullName ? resumeData.personalInfo.fullName.charAt(0) : 'U'}
+                  {resumeData.personalInfo.profileImage ? (
+                    <img 
+                      src={resumeData.personalInfo.profileImage} 
+                      alt="Profile" 
+                      style={{
+                        width: '120px',
+                        height: '120px',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    resumeData.personalInfo.fullName ? resumeData.personalInfo.fullName.charAt(0) : 'U'
+                  )}
                 </div>
                 <h1 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0', color: accentColor }}>
                   {resumeData.personalInfo.fullName || 'Your Name'}
@@ -1065,6 +1130,56 @@ export const ResumeBuilder: React.FC = () => {
               <User size={20} className="text-blue-500" />
               <h3 className="font-semibold text-slate-900 dark:text-slate-100">Personal Information</h3>
             </div>
+            
+            {/* Profile Image Upload */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                Profile Photo
+              </label>
+              <div className="flex items-center space-x-4">
+                {resumeData.personalInfo.profileImage ? (
+                  <div className="relative">
+                    <img 
+                      src={resumeData.personalInfo.profileImage} 
+                      alt="Profile" 
+                      className="w-20 h-20 rounded-full object-cover border-4 border-blue-200 shadow-lg"
+                    />
+                    <button
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-4 border-dashed border-gray-300 dark:border-gray-600">
+                    <Camera size={24} className="text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-2 hover:bg-blue-50 hover:border-blue-300"
+                  >
+                    <Upload size={16} />
+                    <span>{resumeData.personalInfo.profileImage ? 'Change Photo' : 'Upload Photo'}</span>
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Recommended: Square image, max 5MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Full Name"
