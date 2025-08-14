@@ -28,7 +28,7 @@ export const ToolWrapper: React.FC<ToolWrapperProps> = ({
       className="p-0 w-full"
     >
       {/* Tool Header */}
-      <div className="mb-6 px-4 sm:px-6 pt-4 sm:pt-6">
+      <div className="mb-8 px-6 pt-6">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
           {title}
         </h1>
@@ -42,15 +42,15 @@ export const ToolWrapper: React.FC<ToolWrapperProps> = ({
       {/* Main Content Area */}
       <div className="flex gap-0">
         {/* Tool Interface */}
-        <div className="flex-1 px-4 sm:px-6">
-          <Card padding="lg" className="min-h-[500px] sm:min-h-[600px] w-full overflow-hidden">
+        <div className="flex-1 px-6">
+          <Card padding="xl" className="min-h-[600px] w-full">
             {children}
           </Card>
         </div>
 
         {/* Sidebar with Ad */}
         {showSidebarAd && (
-          <div className="hidden xl:block w-80 pr-4 sm:pr-6">
+          <div className="hidden xl:block w-80 pr-6">
             <div className="sticky top-6 space-y-6 pl-6">
               {/* Header Ad moved to sidebar */}
               {showHeaderAd && (
@@ -83,7 +83,7 @@ export const ToolWrapper: React.FC<ToolWrapperProps> = ({
 
       {/* Footer Ad */}
       {showFooterAd && (
-        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+        <div className="px-6 pb-6">
           <AdUnit placement="footer" size="728x90" className="mt-8" />
         </div>
       )}
