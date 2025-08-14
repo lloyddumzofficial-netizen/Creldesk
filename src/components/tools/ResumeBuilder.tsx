@@ -375,18 +375,19 @@ export const ResumeBuilder: React.FC = () => {
   };
 
   const generateShareableLink = async () => {
-    const shareData = {
-      resumeData,
-      const shareId = `${authUser?.id || 'anonymous'}-${Date.now()}`;
-      selectedTheme,
-      profilePhoto
-    };
-    
-    // In a real app, this would upload to cloud storage
-    const shareId = btoa(JSON.stringify(shareData)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
-    const shareUrl = `${window.location.origin}/resume/${shareId}`;
-    
     try {
+      const shareId = `${authUser?.id || 'anonymous'}-${Date.now()}`;
+      const shareData = {
+        resumeData,
+        shareId,
+        selectedTheme,
+        profilePhoto
+      };
+      
+      // In a real app, this would upload to cloud storage
+      const shareId = btoa(JSON.stringify(shareData)).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
+      const shareUrl = `${window.location.origin}/resume/${shareId}`;
+      
       await navigator.clipboard.writeText(shareUrl);
       alert('Shareable link copied to clipboard!');
     } catch (error) {
