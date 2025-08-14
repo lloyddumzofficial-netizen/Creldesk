@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Sun, Moon, User, Menu, LogOut, Settings, Clock, Shield, Activity } from 'lucide-react';
+import { Search, Sun, Moon, User, Menu, LogOut, Settings, Clock, Shield, Activity, MessageCircle } from 'lucide-react';
 import { useAppStore } from '../../stores/useAppStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { Button } from '../ui/Button';
 import { AuthModal } from '../auth/AuthModal';
+import { MessagingSystem } from '../messaging/MessagingSystem';
 
 export const Header: React.FC = () => {
   const { 
@@ -27,6 +28,7 @@ export const Header: React.FC = () => {
   } = useAuthStore();
   const [showAuthModal, setShowAuthModal] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [showMessaging, setShowMessaging] = React.useState(false);
 
   // Get user name from Supabase user metadata or profile
   const getUserName = () => {
@@ -152,6 +154,17 @@ export const Header: React.FC = () => {
             </motion.div>
           </Button>
           
+          {isAuthenticated && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowMessaging(true)}
+              className="relative"
+            >
+              <MessageCircle size={16} />
+            </Button>
+          )}
+          
           {isAuthenticated && user ? (
             <div className="relative">
               <button
@@ -266,6 +279,11 @@ export const Header: React.FC = () => {
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
+      />
+      
+      <MessagingSystem
+        isOpen={showMessaging}
+        onClose={() => setShowMessaging(false)}
       />
     </>
   );
