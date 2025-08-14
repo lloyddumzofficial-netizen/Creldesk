@@ -152,46 +152,18 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       set({ isLoading: true, error: null });
       console.log('Creating/getting conversation with user:', userId);
 
-      // First, check if a direct conversation already exists between these two users
-      const { data: existingConversations, error: searchError } = await supabase
+      // Check if a direct conversation already exists between these two users
+      const { data: existingConversation, error: searchError } = await supabase
         .rpc('find_direct_conversation', {
           user1_id: currentUser.id,
           user2_id: userId
         });
 
-      if (searchError) {
-        console.log('RPC function not available, using manual search');
-        // Fallback to manual search if RPC function doesn't exist
-        const { data: myParticipations } = await supabase
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('user_id', currentUser.id);
-
-        if (myParticipations && myParticipations.length > 0) {
-          for (const participation of myParticipations) {
-            const { data: allParticipants } = await supabase
-              .from('conversation_participants')
-              .select('user_id')
-              .eq('conversation_id', participation.conversation_id);
-
-            const participantIds = (allParticipants || []).map(p => p.user_id);
-            
-            // Check if this is a direct conversation (exactly 2 participants)
-            if (participantIds.length === 2 && 
-                participantIds.includes(userId) && 
-                participantIds.includes(currentUser.id)) {
-              console.log('Found existing conversation:', participation.conversation_id);
-              set({ isLoading: false });
-              return participation.conversation_id;
-            }
-          }
-        }
-      } else if (existingConversations && existingConversations.length > 0) {
-        console.log('Found existing conversation via RPC:', existingConversations[0]);
+      if (!searchError && existingConversation && existingConversation.length > 0) {
+        console.log('Found existing conversation:', existingConversation[0].conversation_id);
         set({ isLoading: false });
-        return existingConversations[0];
+        return existingConversation[0].conversation_id;
       }
-
       // No existing conversation found, create a new one
       console.log('Creating new conversation');
       const { data: newConversation, error: createError } = await supabase
@@ -260,25 +232,16 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       set({ isLoading: true, error: null });
       console.log('Loading conversations for user:', currentUser.id);
 
-      // Get conversations where current user is a participant
+      // Use the RPC function to get conversations with metadata
       const { data, error } = await supabase
-        .from('conversation_participants')
-        .select(`
-          conversation_id, 
-          last_read_at,
-          conversations!inner (
-            id,
-            created_by,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('user_id', currentUser.id)
-        .order('last_read_at', { ascending: false });
+        .rpc('get_user_conversations', {
+          target_user_id: currentUser.id
+        });
 
       if (error) {
         console.error('Error loading conversations:', error);
-        throw error;
+        set({ error: `Failed to load conversations: ${error.message}` });
+        return;
       }
 
       if (!data || data.length === 0) {
@@ -290,10 +253,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
       console.log('Found conversations:', data.length);
 
       const conversations: Conversation[] = await Promise.all(
-        data.map(async (item) => {
-          const conv = item.conversations;
-          if (!conv) return null;
-          
+        data.map(async (conv) => {
           // Get all participants for this conversation
           const { data: allParticipants } = await supabase
             .from('conversation_participants')
@@ -306,7 +266,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
                 avatar_url
               )
             `)
-            .eq('conversation_id', conv.id);
+            .eq('conversation_id', conv.conversation_id);
 
           const participantIds = (allParticipants || []).map(p => p.user_id);
 
@@ -329,44 +289,33 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
             };
           });
 
-          // Get last message
-          const { data: lastMessage } = await supabase
-            .from('messages')
-            .select('*')
-            .eq('conversation_id', conv.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          // Calculate unread count
-          let unreadCount = 0;
-          if (item.last_read_at) {
-            const { count } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('conversation_id', conv.id)
-              .gt('created_at', item.last_read_at)
-              .neq('sender_id', currentUser.id);
-            
-            unreadCount = count || 0;
-          }
+          // Create last message object if available
+          const lastMessage = conv.last_message_content ? {
+            id: 'temp',
+            conversation_id: conv.conversation_id,
+            sender_id: 'unknown',
+            content: conv.last_message_content,
+            message_type: 'text' as const,
+            created_at: conv.last_message_created_at || new Date().toISOString(),
+            updated_at: conv.last_message_created_at || new Date().toISOString(),
+          } : undefined;
 
           return {
-            id: conv.id,
+            id: conv.conversation_id,
             created_by: conv.created_by,
             created_at: conv.created_at,
             updated_at: conv.updated_at,
             participants,
-            last_message: lastMessage || undefined,
-            unread_count: unreadCount,
+            last_message: lastMessage,
+            unread_count: Number(conv.unread_count) || 0,
           };
         })
       );
 
       // Filter out null conversations and sort by updated_at
-      const validConversations = conversations
-        .filter((conv): conv is Conversation => conv !== null)
-        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      const validConversations = conversations.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
 
       console.log('Loaded conversations:', validConversations.length);
       set({ conversations: validConversations });
@@ -386,24 +335,11 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // Verify user is participant in this conversation
-      const { data: participant } = await supabase
-        .from('conversation_participants')
-        .select('id')
-        .eq('conversation_id', conversationId)
-        .eq('user_id', currentUser.id)
-        .single();
-
-      if (!participant) {
-        set({ error: 'Access denied to this conversation' });
-        return;
-      }
-
       const { data, error } = await supabase
         .from('messages')
         .select(`
           *,
-          sender:profiles (
+          profiles!messages_sender_id_fkey (
             id,
             name,
             email,
@@ -424,11 +360,11 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
         created_at: msg.created_at,
         updated_at: msg.updated_at,
         edited_at: msg.edited_at,
-        sender: msg.sender ? {
-          id: msg.sender.id,
-          name: msg.sender.name,
-          email: msg.sender.email,
-          avatar_url: msg.sender.avatar_url,
+        sender: msg.profiles ? {
+          id: msg.profiles.id,
+          name: msg.profiles.name,
+          email: msg.profiles.email,
+          avatar_url: msg.profiles.avatar_url,
           status: 'offline',
           last_seen: new Date().toISOString(),
         } : undefined,
@@ -452,19 +388,6 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
     if (!user || !content.trim()) return;
 
     try {
-      // Verify user is participant in this conversation
-      const { data: participant } = await supabase
-        .from('conversation_participants')
-        .select('id')
-        .eq('conversation_id', conversationId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (!participant) {
-        set({ error: 'Cannot send message to this conversation' });
-        return;
-      }
-
       const { error } = await supabase
         .from('messages')
         .insert({
@@ -476,11 +399,7 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Update conversation timestamp
-      await supabase
-        .from('conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', conversationId);
+      // Conversation timestamp is updated automatically by trigger
 
     } catch (error) {
       console.error('Error sending message:', error);

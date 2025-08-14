@@ -62,6 +62,7 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
   // Initialize messaging system
   useEffect(() => {
     if (isOpen && user) {
+      console.log('Initializing messaging system for user:', user.id);
       loadConversations();
       loadOnlineUsers();
       updatePresence('online');
@@ -79,6 +80,7 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
   // Subscribe to messages for current conversation
   useEffect(() => {
     if (currentConversation) {
+      console.log('Subscribing to messages for conversation:', currentConversation.id);
       const unsubscribe = subscribeToMessages(currentConversation.id);
       return unsubscribe;
     }
@@ -122,6 +124,7 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
 
   const handleStartConversation = async (userId: string) => {
     console.log('Starting conversation with user:', userId);
+    set({ isLoading: true });
     setShowUserSearch(false);
     setSearchQuery('');
     
@@ -139,10 +142,13 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
         setCurrentConversation(conversation);
       } else {
         console.error('Could not find conversation after creation');
+        set({ error: 'Failed to open conversation' });
       }
     } else {
       console.error('Failed to create/get conversation');
+      set({ error: 'Failed to create conversation' });
     }
+    set({ isLoading: false });
   };
 
   const getOtherParticipant = (conversation: Conversation): User | undefined => {
