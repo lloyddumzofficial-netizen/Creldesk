@@ -161,8 +161,7 @@ export const TaskBoard: React.FC = () => {
             width: task.width || 280,
             height: task.height || 120,
           })
-          .select()
-          .single();
+          .select();
 
         if (error) {
           console.error('Error creating task:', error);
@@ -170,7 +169,13 @@ export const TaskBoard: React.FC = () => {
           return null;
         }
 
-        return data;
+        if (!data || data.length === 0) {
+          console.error('No data returned from insert');
+          toast.error('Failed to create task', 'No data returned');
+          return null;
+        }
+
+        return data[0];
       }
     } catch (error) {
       console.error('Error saving task:', error);
@@ -289,7 +294,13 @@ export const TaskBoard: React.FC = () => {
     // Save to database
     const updatedTask = tasks.find(t => t.id === taskId);
     if (updatedTask) {
-      await saveTask({ ...updatedTask, ...updates, id: taskId });
+      const result = await saveTask({ ...updatedTask, ...updates, id: taskId });
+      
+      // If save failed (task not found in database), remove from local state
+      if (result === null) {
+        setTasks(prev => prev.filter(task => task.id !== taskId));
+        toast.error('Task not found', 'Task has been removed from your board');
+      }
     }
   };
 
