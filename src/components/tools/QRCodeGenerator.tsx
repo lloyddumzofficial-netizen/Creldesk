@@ -38,7 +38,7 @@ interface QROptions {
 }
 
 // QR Code generation implementation
-class QRCodeGenerator {
+class InternalQRCodeGenerator {
   private static readonly ERROR_CORRECT_LEVEL = {
     L: 1, M: 0, Q: 3, H: 2
   };
@@ -92,7 +92,7 @@ class QRCodeGenerator {
   ];
 
   static generate(text: string, options: QROptions): string {
-    const qr = new QRCodeGenerator();
+    const qr = new InternalQRCodeGenerator();
     return qr.createQRCode(text, options);
   }
 
@@ -587,6 +587,7 @@ class QRCodeModel {
 
   private setupPositionAdjustPattern() {
     const pos = QRCodeGenerator.PATTERN_POSITION_TABLE[this.typeNumber - 1];
+    const pos = InternalQRCodeGenerator.PATTERN_POSITION_TABLE[this.typeNumber - 1];
     
     for (let i = 0; i < pos.length; i++) {
       for (let j = 0; j < pos.length; j++) {
@@ -778,7 +779,7 @@ export const QRCodeGenerator: React.FC = () => {
       }
 
       // Generate real QR code using our implementation
-      const dataUrl = QRCodeGenerator.generate(text, options);
+      const dataUrl = InternalQRCodeGenerator.generate(text, options);
       return dataUrl;
     } catch (error) {
       console.error('QR Code generation failed:', error);
