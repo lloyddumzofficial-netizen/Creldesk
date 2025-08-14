@@ -55,6 +55,7 @@ export const TaskBoard: React.FC = () => {
   const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [resizingTask, setResizingTask] = useState<string | null>(null);
+  const [pendingCreationTaskId, setPendingCreationTaskId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const dragPreviewRef = useRef<HTMLDivElement>(null);
@@ -253,6 +254,7 @@ export const TaskBoard: React.FC = () => {
     setTasks(prev => [...prev, tempTask]);
     setEditingTask(tempId);
     setEditingField('title');
+    setPendingCreationTaskId(tempId);
 
     // Save to database
     const savedTask = await saveTask(newTaskData);
@@ -275,15 +277,28 @@ export const TaskBoard: React.FC = () => {
           : task
       ));
       setEditingTask(savedTask.id);
+      setPendingCreationTaskId(null);
     } else {
       // Remove temp task if save failed
       setTasks(prev => prev.filter(task => task.id !== tempId));
       setEditingTask(null);
       setEditingField(null);
+      setPendingCreationTaskId(null);
     }
   };
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    // Skip database save if task is still being created
+    if (taskId === pendingCreationTaskId) {
+      // Only update local state for pending tasks
+      setTasks(prev => prev.map(task => 
+        task.id === taskId 
+          ? { ...task, ...updates, updatedAt: new Date().toISOString() }
+          : task
+      ));
+      return;
+    }
+
     // Optimistically update UI
     setTasks(prev => prev.map(task => 
       task.id === taskId 
