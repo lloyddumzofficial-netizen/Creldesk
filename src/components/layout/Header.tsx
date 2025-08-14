@@ -112,7 +112,7 @@ export const Header: React.FC = () => {
             <img 
               src="/Creldesk.png" 
               alt="Creldesk" 
-              className="h-10 w-auto"
+              className="h-12 w-auto max-w-[33%]"
             />
           </motion.div>
         </div>
