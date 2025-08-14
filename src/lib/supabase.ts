@@ -72,7 +72,7 @@ export interface Database {
           user_id: string;
           title: string;
           description: string;
-          column: 'todo' | 'inprogress' | 'done';
+          task_column: 'todo' | 'inprogress' | 'done';
           priority: 'low' | 'medium' | 'high';
           position: number;
           width: number;
@@ -85,7 +85,7 @@ export interface Database {
           user_id: string;
           title?: string;
           description?: string;
-          column?: 'todo' | 'inprogress' | 'done';
+          task_column?: 'todo' | 'inprogress' | 'done';
           priority?: 'low' | 'medium' | 'high';
           position?: number;
           width?: number;
@@ -98,7 +98,7 @@ export interface Database {
           user_id?: string;
           title?: string;
           description?: string;
-          column?: 'todo' | 'inprogress' | 'done';
+          task_column?: 'todo' | 'inprogress' | 'done';
           priority?: 'low' | 'medium' | 'high';
           position?: number;
           width?: number;
