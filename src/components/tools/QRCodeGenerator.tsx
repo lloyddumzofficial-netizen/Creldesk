@@ -580,7 +580,6 @@ class QRCodeModel {
   }
 
   private setupPositionAdjustPattern() {
-    const pos = QRCodeGenerator.PATTERN_POSITION_TABLE[this.typeNumber - 1];
     const pos = InternalQRCodeGenerator.PATTERN_POSITION_TABLE[this.typeNumber - 1];
     
     for (let i = 0; i < pos.length; i++) {
