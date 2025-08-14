@@ -132,11 +132,17 @@ export const TaskBoard: React.FC = () => {
           .eq('id', task.id)
           .eq('user_id', user.id)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error updating task:', error);
           toast.error('Failed to update task', error.message);
+          return null;
+        }
+
+        if (!data) {
+          console.error('No task found to update');
+          toast.error('Failed to update task', 'Task not found');
           return null;
         }
 
