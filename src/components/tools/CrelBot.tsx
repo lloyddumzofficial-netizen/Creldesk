@@ -75,10 +75,17 @@ export const CrelBot: React.FC = () => {
     autoTranslate: false,
     grammarLevel: 'advanced',
   });
+  const [apiConnected, setApiConnected] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+
+  // Check for API key on component mount
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    setApiConnected(!!apiKey);
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -111,8 +118,20 @@ export const CrelBot: React.FC = () => {
   };
 
   const simulateAIResponse = async (userInput: string, mode: typeof currentMode): Promise<string> => {
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (apiKey && apiConnected) {
+      try {
+        return await callOpenAI(userInput, mode, apiKey);
+      } catch (error) {
+        console.error('OpenAI API error:', error);
+        toast.error('API Error', 'Falling back to offline mode');
+        // Fall back to simulation
+      }
+    }
+    
+    // Enhanced simulation with realistic delay
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1500));
 
     switch (mode) {
       case 'paraphrase':
@@ -125,6 +144,39 @@ export const CrelBot: React.FC = () => {
       default:
         return generateChatResponse(userInput);
     }
+  };
+
+  const callOpenAI = async (userInput: string, mode: typeof currentMode, apiKey: string): Promise<string> => {
+    const systemPrompts = {
+      chat: "You are CrelBot, an AI assistant for CrelDesk productivity suite. Be helpful, concise, and professional.",
+      paraphrase: "Rewrite the following text in multiple styles (professional, casual, formal). Provide clear alternatives.",
+      grammar: "Check the following text for grammar errors and provide corrections with explanations.",
+      translate: `Translate the following text to ${LANGUAGES.find(l => l.code === settings.language)?.name || 'English'}. Provide context and confidence level.`
+    };
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: systemPrompts[mode] },
+          { role: 'user', content: userInput }
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || 'Sorry, I could not process your request.';
   };
 
   const generateParaphrase = (text: string): string => {
@@ -639,6 +691,14 @@ export const CrelBot: React.FC = () => {
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
                   <span>Press Enter to send, Shift+Enter for new line</span>
+                  <span>•</span>
+                  <span className={cn(
+                    "flex items-center space-x-1",
+                    apiConnected ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"
+                  )}>
+                    <div className={cn("w-2 h-2 rounded-full", apiConnected ? "bg-green-500" : "bg-amber-500")} />
+                    <span>{apiConnected ? "AI Connected" : "Offline Mode"}</span>
+                  </span>
                   <span>•</span>
                   <span className="capitalize font-medium text-primary-600 dark:text-primary-400">
                     {currentMode} mode active
