@@ -179,8 +179,10 @@ export const LandingPage: React.FC = () => {
             >
               <img 
                 src="/Creldesk.png" 
-                alt="Creldesk" 
-                className="h-12 w-auto max-w-[33%]"
+                alt="Creldesk Logo" 
+                className="h-12 w-auto max-w-[250px] object-contain"
+                width="250"
+                height="48"
               />
             </motion.div>
 
