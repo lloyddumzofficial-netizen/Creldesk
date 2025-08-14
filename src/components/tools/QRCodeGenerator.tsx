@@ -4,17 +4,11 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 
-type QRType = 'url' | 'text' | 'wifi' | 'email' | 'phone' | 'sms';
+type QRType = 'url' | 'text' | 'email' | 'phone' | 'sms';
 
 interface QRData {
   type: QRType;
   content: string;
-  wifi?: {
-    ssid: string;
-    password: string;
-    security: 'WPA' | 'WEP' | 'nopass';
-    hidden?: boolean;
-  };
   email?: {
     to: string;
     subject: string;
@@ -792,11 +786,6 @@ export const QRCodeGenerator: React.FC = () => {
       case 'url':
       case 'text':
         return qrData.content;
-      case 'wifi':
-        if (qrData.wifi) {
-          return `WIFI:T:${qrData.wifi.security};S:${qrData.wifi.ssid};P:${qrData.wifi.password};H:${qrData.wifi.hidden ? 'true' : 'false'};;`;
-        }
-        return '';
       case 'email':
         if (qrData.email) {
           return `mailto:${qrData.email.to}?subject=${encodeURIComponent(qrData.email.subject)}&body=${encodeURIComponent(qrData.email.body)}`;
@@ -874,7 +863,6 @@ export const QRCodeGenerator: React.FC = () => {
   const qrTypes = [
     { id: 'url', name: 'Website URL', icon: Link, description: 'Link to any website' },
     { id: 'text', name: 'Plain Text', icon: QrCode, description: 'Any text content' },
-    { id: 'wifi', name: 'WiFi Network', icon: Wifi, description: 'WiFi credentials' },
     { id: 'email', name: 'Email', icon: Mail, description: 'Email with subject' },
     { id: 'phone', name: 'Phone Number', icon: Smartphone, description: 'Phone number' },
     { id: 'sms', name: 'SMS Message', icon: CreditCard, description: 'Text message' },
@@ -964,44 +952,6 @@ export const QRCodeGenerator: React.FC = () => {
               </div>
             )}
 
-            {qrData.type === 'wifi' && (
-              <div className="space-y-4">
-                <Input
-                  label="Network Name (SSID)"
-                  value={qrData.wifi?.ssid || ''}
-                  onChange={(e) => setQrData({
-                    ...qrData,
-                    wifi: { ...qrData.wifi, ssid: e.target.value, password: qrData.wifi?.password || '', security: qrData.wifi?.security || 'WPA' }
-                  })}
-                  placeholder="MyWiFiNetwork"
-                />
-                <Input
-                  label="Password"
-                  type="password"
-                  value={qrData.wifi?.password || ''}
-                  onChange={(e) => setQrData({
-                    ...qrData,
-                    wifi: { ...qrData.wifi, ssid: qrData.wifi?.ssid || '', password: e.target.value, security: qrData.wifi?.security || 'WPA' }
-                  })}
-                  placeholder="WiFi password"
-                />
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Security</label>
-                  <select
-                    value={qrData.wifi?.security || 'WPA'}
-                    onChange={(e) => setQrData({
-                      ...qrData,
-                      wifi: { ...qrData.wifi, ssid: qrData.wifi?.ssid || '', password: qrData.wifi?.password || '', security: e.target.value as 'WPA' | 'WEP' | 'nopass' }
-                    })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-turquoise-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
-                  >
-                    <option value="WPA">WPA/WPA2</option>
-                    <option value="WEP">WEP</option>
-                    <option value="nopass">No Password</option>
-                  </select>
-                </div>
-              </div>
-            )}
 
             {qrData.type === 'email' && (
               <div className="space-y-4">
