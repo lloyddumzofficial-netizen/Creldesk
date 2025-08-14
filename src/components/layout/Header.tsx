@@ -111,8 +111,10 @@ export const Header: React.FC = () => {
           >
             <img 
               src="/Creldesk.png" 
-              alt="Creldesk" 
-              className="h-12 w-auto max-w-[33%]"
+              alt="Creldesk Logo" 
+              className="h-10 w-auto max-w-[200px] object-contain"
+              width="200"
+              height="40"
             />
           </motion.div>
         </div>
