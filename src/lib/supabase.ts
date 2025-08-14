@@ -107,5 +107,97 @@ export interface Database {
         };
       };
     };
+    conversations: {
+      Row: {
+        id: string;
+        created_by: string;
+        created_at: string;
+        updated_at: string;
+      };
+      Insert: {
+        id?: string;
+        created_by: string;
+        created_at?: string;
+        updated_at?: string;
+      };
+      Update: {
+        id?: string;
+        created_by?: string;
+        updated_at?: string;
+      };
+    };
+    conversation_participants: {
+      Row: {
+        id: string;
+        conversation_id: string;
+        user_id: string;
+        joined_at: string;
+        last_read_at: string;
+      };
+      Insert: {
+        id?: string;
+        conversation_id: string;
+        user_id: string;
+        joined_at?: string;
+        last_read_at?: string;
+      };
+      Update: {
+        id?: string;
+        conversation_id?: string;
+        user_id?: string;
+        last_read_at?: string;
+      };
+    };
+    messages: {
+      Row: {
+        id: string;
+        conversation_id: string;
+        sender_id: string;
+        content: string;
+        message_type: 'text' | 'image' | 'file';
+        created_at: string;
+        updated_at: string;
+        edited_at?: string;
+      };
+      Insert: {
+        id?: string;
+        conversation_id: string;
+        sender_id: string;
+        content: string;
+        message_type?: 'text' | 'image' | 'file';
+        created_at?: string;
+        updated_at?: string;
+        edited_at?: string;
+      };
+      Update: {
+        id?: string;
+        conversation_id?: string;
+        sender_id?: string;
+        content?: string;
+        message_type?: 'text' | 'image' | 'file';
+        updated_at?: string;
+        edited_at?: string;
+      };
+    };
+    user_presence: {
+      Row: {
+        user_id: string;
+        status: 'online' | 'away' | 'busy' | 'offline';
+        last_seen: string;
+        updated_at: string;
+      };
+      Insert: {
+        user_id: string;
+        status?: 'online' | 'away' | 'busy' | 'offline';
+        last_seen?: string;
+        updated_at?: string;
+      };
+      Update: {
+        user_id?: string;
+        status?: 'online' | 'away' | 'busy' | 'offline';
+        last_seen?: string;
+        updated_at?: string;
+      };
+    };
   };
 }
