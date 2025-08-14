@@ -18,6 +18,7 @@ import { QRCodeGenerator } from './components/tools/QRCodeGenerator';
 import { PasswordGenerator } from './components/tools/PasswordGenerator';
 import { ColorPicker } from './components/tools/ColorPicker';
 import { PomodoroTimer } from './components/tools/PomodoroTimer';
+import { Crelbot } from './components/ai/Crelbot';
 import { TOOLS } from './constants/tools';
 
 function App() {
@@ -263,6 +264,7 @@ function App() {
   return (
     <MainLayout>
       {renderTool()}
+      <Crelbot />
     </MainLayout>
   );
 }
