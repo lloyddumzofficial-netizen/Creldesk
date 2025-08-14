@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MousePointer, 
@@ -239,6 +239,8 @@ export const LogoEditor: React.FC = () => {
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
   
   // History Management
   const [history, setHistory] = useState<CanvasElement[][]>([[]]);
@@ -248,6 +250,8 @@ export const LogoEditor: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lastPanPos, setLastPanPos] = useState({ x: 0, y: 0 });
+  const [spacePressed, setSpacePressed] = useState(false);
   
   // Current Style State
   const [currentFill, setCurrentFill] = useState('#3b82f6');
@@ -277,9 +281,9 @@ export const LogoEditor: React.FC = () => {
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
     
     // Apply zoom and pan
-    ctx.save();
     ctx.scale(canvasState.zoom, canvasState.zoom);
     ctx.translate(canvasState.panX, canvasState.panY);
 
@@ -293,6 +297,9 @@ export const LogoEditor: React.FC = () => {
     if (canvasState.showGrid) {
       drawGrid(ctx);
     }
+
+    // Apply pan offset
+    ctx.translate(panOffset.x, panOffset.y);
 
     // Sort elements by z-index
     const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex);
@@ -312,7 +319,7 @@ export const LogoEditor: React.FC = () => {
     });
 
     ctx.restore();
-  }, [elements, selectedElements, canvasState]);
+  }, [elements, selectedElements, canvasState, panOffset]);
 
   const drawGrid = (ctx: CanvasRenderingContext2D) => {
     const { gridSize, width, height } = canvasState;
@@ -482,11 +489,18 @@ export const LogoEditor: React.FC = () => {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / canvasState.zoom - canvasState.panX;
-    const y = (e.clientY - rect.top) / canvasState.zoom - canvasState.panY;
+    const x = (e.clientX - rect.left) / canvasState.zoom - canvasState.panX - panOffset.x;
+    const y = (e.clientY - rect.top) / canvasState.zoom - canvasState.panY - panOffset.y;
 
     setDragStart({ x, y });
     setIsDrawing(true);
+
+    // Check if panning (space key or hand tool)
+    if (spacePressed || activeTool === 'pan') {
+      setIsPanning(true);
+      setLastPanPos({ x: e.clientX, y: e.clientY });
+      return;
+    }
 
     if (activeTool === 'select') {
       handleSelection(x, y, e.shiftKey);
@@ -503,9 +517,18 @@ export const LogoEditor: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Handle panning
+    if (isPanning) {
+      const deltaX = e.clientX - lastPanPos.x;
+      const deltaY = e.clientY - lastPanPos.y;
+      setPanOffset(prev => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+      setLastPanPos({ x: e.clientX, y: e.clientY });
+      return;
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / canvasState.zoom - canvasState.panX;
-    const y = (e.clientY - rect.top) / canvasState.zoom - canvasState.panY;
+    const x = (e.clientX - rect.left) / canvasState.zoom - canvasState.panX - panOffset.x;
+    const y = (e.clientY - rect.top) / canvasState.zoom - canvasState.panY - panOffset.y;
 
     if (activeTool === 'select' && selectedElements.length > 0) {
       // Move selected elements
@@ -526,6 +549,7 @@ export const LogoEditor: React.FC = () => {
 
   const handleCanvasMouseUp = () => {
     setIsDrawing(false);
+    setIsPanning(false);
     setDragStart(null);
     
     if (['rectangle', 'circle', 'triangle', 'star'].includes(activeTool)) {
@@ -758,6 +782,11 @@ export const LogoEditor: React.FC = () => {
     }));
   };
 
+  // Calculate canvas transform style
+  const canvasTransform = useMemo(() => {
+    return `scale(${canvasState.zoom})`;
+  }, [canvasState.zoom]);
+
   // Export Functions
   const exportCanvas = (format: 'png' | 'jpg' | 'svg' | 'pdf') => {
     const canvas = canvasRef.current;
@@ -857,6 +886,32 @@ export const LogoEditor: React.FC = () => {
     
     reader.readAsDataURL(file);
   };
+
+  // Keyboard event handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !spacePressed) {
+        e.preventDefault();
+        setSpacePressed(true);
+        document.body.style.cursor = 'grab';
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setSpacePressed(false);
+        document.body.style.cursor = 'default';
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [spacePressed]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -1102,7 +1157,7 @@ export const LogoEditor: React.FC = () => {
           {/* Canvas Container */}
           <div 
             ref={containerRef}
-            className="flex-1 bg-slate-700 overflow-auto relative"
+            className="flex-1 bg-slate-700 overflow-hidden relative"
             style={{ 
               backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
               backgroundSize: '20px 20px'
@@ -1128,6 +1183,7 @@ export const LogoEditor: React.FC = () => {
                     width: '100%',
                     height: '100%',
                     imageRendering: 'pixelated',
+                    transform: canvasTransform,
                   }}
                 />
               </div>
@@ -1143,7 +1199,11 @@ export const LogoEditor: React.FC = () => {
               animate={{ width: 300, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="bg-slate-800 border-l border-slate-700 overflow-hidden"
+              className={`bg-slate-800 border-l border-slate-700 overflow-hidden transition-all duration-200 ${
+                isPanning || spacePressed 
+                  ? 'bg-slate-700/90 backdrop-blur-sm border-l-2 border-turquoise-500' 
+                  : 'bg-slate-800'
+              }`}
             >
               <div className="w-[300px] h-full overflow-y-auto">
                 <div className="p-4 space-y-6">
@@ -1486,16 +1546,23 @@ export const LogoEditor: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+                <div className={`space-y-1 max-h-32 overflow-y-auto ${
+                  isPanning || spacePressed 
+                    ? 'bg-slate-800/80 rounded-lg p-2' 
+                    : ''
+                }`}>
                   {[...elements].reverse().map((element, index) => (
                     <motion.div
                       key={element.id}
                       onClick={() => setSelectedElements([element.id])}
                       className={cn(
-                        "flex items-center justify-between p-2 rounded cursor-pointer transition-colors",
+                        "flex items-center justify-between p-2 rounded cursor-pointer transition-all",
                         selectedElements.includes(element.id)
                           ? "bg-blue-500/20 border border-blue-500/50"
-                          : "hover:bg-slate-700"
+                          : "hover:bg-slate-700",
+                        isPanning || spacePressed 
+                          ? 'shadow-lg border border-turquoise-400/30' 
+                          : ''
                       )}
                       whileHover={{ scale: 1.02 }}
                     >
