@@ -508,18 +508,18 @@ export const TaskBoard: React.FC = () => {
   }
 
   return (
-    <div className={cn("min-h-screen transition-colors duration-200", isDarkMode ? "bg-gray-900" : "bg-gray-50")}>
+    <div className={cn("min-h-screen transition-colors duration-200", isDarkMode ? "bg-gray-900" : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50")}>
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Task Board</h1>
-            <p className="text-gray-600 dark:text-gray-400">Organize your work with drag-and-drop simplicity</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Task Board</h1>
+            <p className="text-slate-600 dark:text-gray-400">Organize your work with drag-and-drop simplicity</p>
           </div>
           
           <div className="flex items-center space-x-2">
             {saving && (
-              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-gray-400">
                 <Loader className="w-4 h-4 animate-spin" />
                 <span>Saving...</span>
               </div>
@@ -538,7 +538,7 @@ export const TaskBoard: React.FC = () => {
 
       {/* Kanban Board */}
       <div className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {COLUMNS.map((column) => {
             const columnTasks = getTasksByColumn(column.id);
             
@@ -546,21 +546,34 @@ export const TaskBoard: React.FC = () => {
               <div
                 key={column.id}
                 className={cn(
-                  "rounded-xl p-4 min-h-[600px] transition-all duration-200",
-                  column.color,
-                  dragOverColumn === column.id && "ring-2 ring-blue-500 ring-opacity-50"
+                  "rounded-2xl p-6 min-h-[600px] transition-all duration-200 shadow-sm border",
+                  column.id === 'todo' && "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700",
+                  column.id === 'inprogress' && "bg-gradient-to-br from-blue-50 to-indigo-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                  column.id === 'done' && "bg-gradient-to-br from-emerald-50 to-green-50 dark:bg-green-900/20 border-emerald-200 dark:border-green-800",
+                  dragOverColumn === column.id && "ring-2 ring-primary-400 ring-opacity-50 shadow-lg"
                 )}
                 onDragOver={(e) => handleDragOver(e, column.id)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, column.id)}
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-2">
-                    <h2 className="font-semibold text-gray-900 dark:text-white">
+                    <div className={cn(
+                      "w-3 h-3 rounded-full",
+                      column.id === 'todo' && "bg-slate-400",
+                      column.id === 'inprogress' && "bg-blue-500",
+                      column.id === 'done' && "bg-emerald-500"
+                    )} />
+                    <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
                       {column.title}
                     </h2>
-                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
+                    <span className={cn(
+                      "text-xs px-2.5 py-1 rounded-full font-medium",
+                      column.id === 'todo' && "bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-300",
+                      column.id === 'inprogress' && "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
+                      column.id === 'done' && "bg-emerald-100 text-emerald-700 dark:bg-green-900/50 dark:text-green-300"
+                    )}>
                       {columnTasks.length}
                     </span>
                   </div>
@@ -569,7 +582,12 @@ export const TaskBoard: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => createTask(column.id)}
-                    className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50"
+                    className={cn(
+                      "p-2 rounded-lg transition-all duration-200",
+                      column.id === 'todo' && "hover:bg-slate-100 dark:hover:bg-gray-800/50",
+                      column.id === 'inprogress' && "hover:bg-blue-100 dark:hover:bg-blue-800/50",
+                      column.id === 'done' && "hover:bg-emerald-100 dark:hover:bg-green-800/50"
+                    )}
                     disabled={saving}
                   >
                     <Plus size={16} />
@@ -577,12 +595,12 @@ export const TaskBoard: React.FC = () => {
                 </div>
 
                 {/* Tasks */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {columnTasks.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      <div className="text-4xl mb-2">📝</div>
+                    <div className="text-center py-12 text-slate-400 dark:text-gray-400">
+                      <div className="text-5xl mb-3 opacity-50">📝</div>
                       <p className="text-sm">No tasks yet</p>
-                      <p className="text-xs">Click + to add one</p>
+                      <p className="text-xs opacity-75">Click + to add one</p>
                     </div>
                   ) : (
                     columnTasks.map((task) => (
@@ -592,9 +610,10 @@ export const TaskBoard: React.FC = () => {
                         onDragStart={(e) => handleDragStart(e, task)}
                         onDragEnd={handleDragEnd}
                         className={cn(
-                          "bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 cursor-move transition-all duration-200 hover:shadow-md relative group",
-                          task.column === 'done' && "opacity-50",
-                          draggedTask?.id === task.id && "opacity-50 rotate-2 scale-105"
+                          "bg-white dark:bg-gray-800 rounded-xl shadow-sm border cursor-move transition-all duration-200 hover:shadow-lg hover:-translate-y-1 relative group",
+                          "border-slate-200 dark:border-gray-700",
+                          task.column === 'done' && "opacity-75 bg-slate-50 dark:bg-gray-800",
+                          draggedTask?.id === task.id && "opacity-50 rotate-2 scale-105 shadow-xl"
                         )}
                         style={{
                           width: task.width,
@@ -604,13 +623,13 @@ export const TaskBoard: React.FC = () => {
                         }}
                       >
                         {/* Task Content */}
-                        <div className="p-3 h-full flex flex-col">
+                        <div className="p-4 h-full flex flex-col">
                           {/* Header with priority and actions */}
-                          <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-start justify-between mb-3">
                             <button
                               onClick={() => cyclePriority(task.id)}
                               className={cn(
-                                "w-3 h-3 rounded-full transition-colors duration-200",
+                                "w-3 h-3 rounded-full transition-all duration-200 hover:scale-125 shadow-sm",
                                 PRIORITY_COLORS[task.priority]
                               )}
                               title={`Priority: ${PRIORITY_LABELS[task.priority]} (click to change)`}
@@ -618,13 +637,15 @@ export const TaskBoard: React.FC = () => {
                             
                             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               {task.column === 'done' && (
-                                <Check size={14} className="text-green-500" />
+                                <div className="bg-emerald-100 dark:bg-emerald-900/50 rounded-full p-1">
+                                  <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                                </div>
                               )}
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setDeleteConfirm(task.id)}
-                                className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500"
+                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 hover:text-red-600 rounded-lg transition-all duration-200"
                                 disabled={saving}
                               >
                                 <Trash2 size={12} />
@@ -633,7 +654,7 @@ export const TaskBoard: React.FC = () => {
                           </div>
 
                           {/* Title */}
-                          <div className="mb-2">
+                          <div className="mb-3">
                             {editingTask === task.id && editingField === 'title' ? (
                               <input
                                 type="text"
@@ -644,12 +665,12 @@ export const TaskBoard: React.FC = () => {
                                   handleEditEnd();
                                 }}
                                 onKeyDown={(e) => handleKeyDown(e, task.id, 'title', e.currentTarget.value)}
-                                className="w-full bg-transparent border-none outline-none font-medium text-gray-900 dark:text-white resize-none"
+                                className="w-full bg-transparent border-none outline-none font-semibold text-slate-900 dark:text-white resize-none"
                               />
                             ) : (
                               <h3
                                 onClick={() => handleEditStart(task.id, 'title')}
-                                className="font-medium text-gray-900 dark:text-white cursor-text hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 -mx-1 transition-colors"
+                                className="font-semibold text-slate-900 dark:text-white cursor-text hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1 -mx-2 -my-1 transition-all duration-200"
                               >
                                 {task.title}
                               </h3>
@@ -669,15 +690,15 @@ export const TaskBoard: React.FC = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') handleEditEnd();
                                 }}
-                                className="w-full h-full bg-transparent border-none outline-none text-sm text-gray-600 dark:text-gray-300 resize-none"
+                                className="w-full h-full bg-transparent border-none outline-none text-sm text-slate-600 dark:text-gray-300 resize-none"
                                 placeholder="Add description..."
                               />
                             ) : (
                               <p
                                 onClick={() => handleEditStart(task.id, 'description')}
-                                className="text-sm text-gray-600 dark:text-gray-300 cursor-text hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 -mx-1 transition-colors h-full overflow-hidden"
+                                className="text-sm text-slate-600 dark:text-gray-300 cursor-text hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1 -mx-2 -my-1 transition-all duration-200 h-full overflow-hidden leading-relaxed"
                               >
-                                {task.description || 'Add description...'}
+                                {task.description || <span className="opacity-50">Add description...</span>}
                               </p>
                             )}
                           </div>
@@ -686,14 +707,14 @@ export const TaskBoard: React.FC = () => {
                         {/* Resize Handle */}
                         <div
                           onMouseDown={(e) => handleResizeStart(e, task.id)}
-                          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-tl-lg"
                         >
-                          <div className="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-gray-400 dark:border-gray-500" />
+                          <div className="absolute bottom-1.5 right-1.5 w-2 h-2 border-r-2 border-b-2 border-slate-400 dark:border-gray-500" />
                         </div>
 
                         {/* Drag Handle */}
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
-                          <GripVertical size={14} className="text-gray-400 dark:text-gray-500" />
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-move hover:bg-slate-100 dark:hover:bg-gray-700 rounded p-1">
+                          <GripVertical size={14} className="text-slate-400 dark:text-gray-500" />
                         </div>
                       </div>
                     ))
@@ -707,26 +728,26 @@ export const TaskBoard: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
               Delete Task
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <p className="text-slate-600 dark:text-gray-300 mb-6 leading-relaxed">
               Are you sure you want to delete this task? This action cannot be undone.
             </p>
             <div className="flex space-x-3">
               <Button
                 variant="outline"
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1"
+                className="flex-1 border-slate-300 hover:bg-slate-50"
                 disabled={saving}
               >
                 Cancel
               </Button>
               <Button
                 onClick={() => deleteTask(deleteConfirm)}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={saving}
               >
                 {saving ? <Loader className="w-4 h-4 animate-spin" /> : 'Delete'}
@@ -739,12 +760,12 @@ export const TaskBoard: React.FC = () => {
       {/* Hidden drag preview */}
       <div
         ref={dragPreviewRef}
-        className="fixed -top-1000 -left-1000 pointer-events-none opacity-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-gray-700"
+        className="fixed -top-1000 -left-1000 pointer-events-none opacity-90 bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 border border-slate-200 dark:border-gray-700"
       >
         {draggedTask && (
           <div>
-            <h3 className="font-medium text-gray-900 dark:text-white">{draggedTask.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
+            <h3 className="font-semibold text-slate-900 dark:text-white">{draggedTask.title}</h3>
+            <p className="text-sm text-slate-600 dark:text-gray-300 truncate">
               {draggedTask.description || 'No description'}
             </p>
           </div>
