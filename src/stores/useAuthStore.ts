@@ -300,8 +300,10 @@ export const useAuthStore = create<AuthStore>()(
           if (error) {
             console.error('Error refreshing session:', error);
             // Handle refresh token not found error
-            if (error.message?.includes('Refresh Token Not Found')) {
-              await supabase.auth.signOut();
+            if (error.message?.includes('Refresh Token Not Found') ||
+                error.message?.includes('session_not_found') ||
+                error.message?.includes('Auth session missing')) {
+              // Don't attempt signOut if session is already invalid
               set({
                 session: null,
                 user: null,
@@ -512,10 +514,14 @@ export const useAuthStore = create<AuthStore>()(
         
         try {
           get().addSessionEvent('logout_initiated');
-          const { error } = await supabase.auth.signOut();
           
-          if (error) {
-            console.error('Logout error:', error);
+          // Only attempt signOut if we have a valid session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+              console.error('Logout error:', error);
+            }
           }
 
           set({
@@ -523,6 +529,8 @@ export const useAuthStore = create<AuthStore>()(
             session: null,
             profile: null,
             sessionExpiry: null,
+            sessionWarningShown: false,
+            isSessionExpiring: false,
             sessionHistory: [], // Clear session history on logout
             isAuthenticated: false,
             isLoading: false,
@@ -530,7 +538,19 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error) {
           console.error('Logout failed:', error);
-          set({ isLoading: false });
+          // Even if logout fails, clear local state
+          set({
+            user: null,
+            session: null,
+            profile: null,
+            sessionExpiry: null,
+            sessionWarningShown: false,
+            isSessionExpiring: false,
+            sessionHistory: [],
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          });
         }
       },
 
