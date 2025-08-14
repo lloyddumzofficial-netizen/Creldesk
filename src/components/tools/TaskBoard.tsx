@@ -526,8 +526,9 @@ export const TaskBoard: React.FC = () => {
             )}
             <Button
               variant="ghost"
-              initial={{ opacity: 1, y: 0 }}
-              animate={{ opacity: 1, y: 0 }}
+              size="sm"
+              onClick={toggleTheme}
+              className="p-2"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
@@ -576,15 +577,16 @@ export const TaskBoard: React.FC = () => {
                       {columnTasks.length}
                     </span>
                   </div>
-                    initial={{ opacity: 1, x: 0 }}
-                    animate={{ opacity: 1, x: 0 }}
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => createTask(column.id)}
                     className={cn(
                       "p-2 rounded-lg transition-all duration-200",
                       column.id === 'todo' && "hover:bg-slate-100 dark:hover:bg-gray-800/50",
-                    initial={{ opacity: 1, x: 0 }}
-                    animate={{ opacity: 1, x: 0 }}
+                      column.id === 'inprogress' && "hover:bg-white/50",
+                      column.id === 'done' && "hover:bg-white/50"
+                    )}
                     disabled={saving}
                   >
                     <Plus size={16} />
