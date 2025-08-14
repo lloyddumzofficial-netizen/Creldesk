@@ -110,6 +110,160 @@ export const InvoiceGenerator: React.FC = () => {
   const { saveProject } = useAppStore();
   const { toast } = useToast();
 
+  const renderInvoiceTemplate = (data: InvoiceData, template: string) => {
+    const templateStyles = {
+      modern: {
+        headerBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        headerColor: '#ffffff',
+        accentColor: '#667eea',
+        borderColor: '#e2e8f0'
+      },
+      classic: {
+        headerBg: '#1a202c',
+        headerColor: '#ffffff',
+        accentColor: '#2d3748',
+        borderColor: '#cbd5e0'
+      },
+      minimal: {
+        headerBg: '#f7fafc',
+        headerColor: '#2d3748',
+        accentColor: '#4a5568',
+        borderColor: '#e2e8f0'
+      },
+      professional: {
+        headerBg: '#2b6cb0',
+        headerColor: '#ffffff',
+        accentColor: '#2b6cb0',
+        borderColor: '#bee3f8'
+      }
+    };
+
+    const style = templateStyles[template as keyof typeof templateStyles] || templateStyles.modern;
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid ${style.borderColor};">
+        <!-- Header -->
+        <div style="background: ${style.headerBg}; color: ${style.headerColor}; padding: 30px; margin: -20px -20px 30px -20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h1 style="margin: 0; font-size: 28px; font-weight: bold;">INVOICE</h1>
+              <p style="margin: 5px 0 0 0; opacity: 0.9;">#${data.invoiceNumber}</p>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 18px; font-weight: bold;">${data.currency}${data.total.toFixed(2)}</div>
+              <div style="opacity: 0.9;">Due: ${data.dueDate}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Company & Client Info -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+          <div>
+            <h3 style="color: ${style.accentColor}; margin: 0 0 10px 0;">From:</h3>
+            <div><strong>${data.from.name}</strong></div>
+            <div>${data.from.email}</div>
+            <div>${data.from.phone}</div>
+            <div style="white-space: pre-line;">${data.from.address}</div>
+            ${data.from.website ? `<div>${data.from.website}</div>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <h3 style="color: ${style.accentColor}; margin: 0 0 10px 0;">To:</h3>
+            <div><strong>${data.to.name}</strong></div>
+            <div>${data.to.email}</div>
+            <div style="white-space: pre-line;">${data.to.address}</div>
+          </div>
+        </div>
+
+        <!-- Invoice Details -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+          <div>
+            <div><strong>Invoice Date:</strong> ${data.date}</div>
+            <div><strong>Due Date:</strong> ${data.dueDate}</div>
+            ${data.poNumber ? `<div><strong>PO Number:</strong> ${data.poNumber}</div>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <div><strong>Currency:</strong> ${data.currency}</div>
+            <div><strong>Payment Terms:</strong> Net 30</div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+          <thead>
+            <tr style="background: ${style.accentColor}; color: white;">
+              <th style="padding: 12px; text-align: left; border: 1px solid ${style.borderColor};">Description</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid ${style.borderColor};">Qty</th>
+              <th style="padding: 12px; text-align: right; border: 1px solid ${style.borderColor};">Rate</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid ${style.borderColor};">Tax</th>
+              <th style="padding: 12px; text-align: right; border: 1px solid ${style.borderColor};">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.items.map(item => `
+              <tr>
+                <td style="padding: 12px; border: 1px solid ${style.borderColor};">${item.description}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid ${style.borderColor};">${item.quantity}</td>
+                <td style="padding: 12px; text-align: right; border: 1px solid ${style.borderColor};">${data.currency}${item.rate.toFixed(2)}</td>
+                <td style="padding: 12px; text-align: center; border: 1px solid ${style.borderColor};">${item.taxable ? '✓' : '—'}</td>
+                <td style="padding: 12px; text-align: right; border: 1px solid ${style.borderColor};">${data.currency}${item.amount.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div style="display: flex; justify-content: flex-end;">
+          <div style="min-width: 300px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid ${style.borderColor};">
+              <span>Subtotal:</span>
+              <span>${data.currency}${data.subtotal.toFixed(2)}</span>
+            </div>
+            ${data.discount > 0 ? `
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid ${style.borderColor};">
+                <span>Discount:</span>
+                <span>-${data.currency}${data.discount.toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${data.shipping > 0 ? `
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid ${style.borderColor};">
+                <span>Shipping:</span>
+                <span>${data.currency}${data.shipping.toFixed(2)}</span>
+              </div>
+            ` : ''}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid ${style.borderColor};">
+              <span>Tax:</span>
+              <span>${data.currency}${data.tax.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 18px; font-weight: bold; background: ${style.headerBg}; color: ${style.headerColor}; margin-top: 10px; padding-left: 15px; padding-right: 15px; border-radius: 8px;">
+              <span>Total:</span>
+              <span>${data.currency}${data.total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        ${data.notes ? `
+          <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid ${style.accentColor};">
+            <h4 style="margin: 0 0 10px 0; color: ${style.accentColor};">Notes:</h4>
+            <p style="margin: 0; white-space: pre-line;">${data.notes}</p>
+          </div>
+        ` : ''}
+
+        <!-- Payment Instructions -->
+        <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+          <h4 style="margin: 0 0 10px 0; color: #0369a1;">Payment Instructions:</h4>
+          <p style="margin: 0;">Please remit payment within 30 days of the invoice date. Thank you for your business!</p>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid ${style.borderColor}; color: #6b7280; font-size: 14px;">
+          <p style="margin: 0;">Thank you for your business!</p>
+          ${data.from.website ? `<p style="margin: 5px 0 0 0;">${data.from.website}</p>` : ''}
+        </div>
+      </div>
+    `;
+  };
+
   // Auto-generate invoice number
   useEffect(() => {
     if (!invoiceData.invoiceNumber) {
