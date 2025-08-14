@@ -51,6 +51,7 @@ export interface ResumeData {
     location: string;
     website?: string;
     linkedin?: string;
+    profileImage?: string;
   };
   objective: string;
   experience: Array<{

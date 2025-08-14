@@ -22,7 +22,10 @@ import {
   Calendar,
   Building,
   Star,
-  Palette
+  Palette,
+  Upload,
+  Camera,
+  X
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -102,6 +105,8 @@ export const ResumeBuilder: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('professional');
   const [showPreview, setShowPreview] = useState(true);
   const [activeSection, setActiveSection] = useState<string>('personal');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
       fullName: 'John Doe',
@@ -109,7 +114,8 @@ export const ResumeBuilder: React.FC = () => {
       phone: '+1 (555) 123-4567',
       location: 'New York, NY',
       website: 'www.johndoe.com',
-      linkedin: 'linkedin.com/in/johndoe'
+      linkedin: 'linkedin.com/in/johndoe',
+      profileImage: ''
     },
     objective: 'Experienced professional seeking to leverage expertise in a challenging role that offers growth opportunities and the chance to make meaningful contributions.',
     experience: [
@@ -148,6 +154,64 @@ export const ResumeBuilder: React.FC = () => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const currentTemplate = RESUME_TEMPLATES.find(t => t.id === selectedTemplate) || RESUME_TEMPLATES[0];
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      // Convert to base64 for storage and display
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64String = event.target?.result as string;
+        setResumeData(prev => ({
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            profileImage: base64String
+          }
+        }));
+        setUploadingImage(false);
+      };
+      reader.onerror = () => {
+        alert('Error reading image file');
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image');
+      setUploadingImage(false);
+    }
+  };
+
+  const removeProfileImage = () => {
+    setResumeData(prev => ({
+      ...prev,
+      personalInfo: {
+        ...prev.personalInfo,
+        profileImage: ''
+      }
+    }));
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
 
   const addExperience = () => {
     const newExperience = {
@@ -302,11 +366,15 @@ export const ResumeBuilder: React.FC = () => {
         <div class="resume-container" style="width: 210mm; height: 297mm; margin: 0 auto; display: flex; font-family: 'Inter', sans-serif; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
           <!-- Sidebar -->
           <div style="width: 35%; background: ${template.primaryColor}; color: white; padding: 40px 30px; display: flex; flex-direction: column;">
-            <!-- Profile Photo Placeholder -->
-            <div style="width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.2);">
-              <svg width="60" height="60" fill="rgba(255,255,255,0.7)" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
+            <!-- Profile Photo -->
+            <div style="width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.2); overflow: hidden;">
+              ${personalInfo.profileImage ? `
+                <img src="${personalInfo.profileImage}" alt="Profile" style="width: 100%; height: 100%; object-cover;" />
+              ` : `
+                <svg width="60" height="60" fill="rgba(255,255,255,0.7)" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              `}
             </div>
             
             <!-- Contact Info -->
@@ -749,6 +817,72 @@ export const ResumeBuilder: React.FC = () => {
                     <div className="flex items-center space-x-2 mb-6">
                       <User size={20} className="text-primary-500" />
                       <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Personal Information</h3>
+                    </div>
+                    
+                    {/* Profile Image Upload */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                        Profile Image
+                      </label>
+                      
+                      <div className="flex items-center space-x-4">
+                        {/* Image Preview */}
+                        <div className="relative">
+                          {resumeData.personalInfo.profileImage ? (
+                            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                              <img
+                                src={resumeData.personalInfo.profileImage}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                onClick={removeProfileImage}
+                                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-700 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                              <Camera size={24} className="text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Upload Controls */}
+                        <div className="flex-1 space-y-2">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          
+                          <Button
+                            onClick={triggerImageUpload}
+                            variant="outline"
+                            disabled={uploadingImage}
+                            className="w-full"
+                          >
+                            {uploadingImage ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mr-2" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={16} className="mr-2" />
+                                {resumeData.personalInfo.profileImage ? 'Change Image' : 'Upload Image'}
+                              </>
+                            )}
+                          </Button>
+                          
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            JPG, PNG up to 5MB. Square images work best.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
