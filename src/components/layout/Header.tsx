@@ -115,6 +115,10 @@ export const Header: React.FC = () => {
               className="h-10 w-auto max-w-[200px] object-contain"
               width="200"
               height="40"
+              onError={(e) => {
+                console.error('Logo failed to load:', e);
+                e.currentTarget.style.display = 'none';
+              }}
             />
           </motion.div>
         </div>

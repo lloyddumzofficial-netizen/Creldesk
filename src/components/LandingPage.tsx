@@ -183,6 +183,10 @@ export const LandingPage: React.FC = () => {
                 className="h-12 w-auto max-w-[250px] object-contain"
                 width="250"
                 height="48"
+                onError={(e) => {
+                  console.error('Logo failed to load:', e);
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </motion.div>
 
