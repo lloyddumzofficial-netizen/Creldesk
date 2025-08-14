@@ -3,6 +3,7 @@ import { useAppStore } from './stores/useAppStore';
 import { useAuthStore } from './stores/useAuthStore';
 import { LandingPage } from './components/LandingPage';
 import { MainLayout } from './components/layout/MainLayout';
+import { OnboardingWrapper } from './components/onboarding/OnboardingWrapper';
 import { Dashboard } from './components/Dashboard';
 import { ToolWrapper } from './components/tools/ToolWrapper';
 import { PhotopeaEditor } from './components/tools/PhotopeaEditor';
@@ -127,6 +128,16 @@ function App() {
   if (!isAuthenticated) {
     return <LandingPage />;
   }
+
+  return (
+    <OnboardingWrapper>
+      <MainApp />
+    </OnboardingWrapper>
+  );
+}
+
+const MainApp: React.FC = () => {
+  const { currentTool } = useAppStore();
 
   const renderTool = () => {
     if (!currentTool) return <Dashboard />;
@@ -279,6 +290,6 @@ function App() {
       <Crelbot />
     </MainLayout>
   );
-}
+};
 
 export default App;
