@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import type { AuthState } from '../types';
+import type { User, Session } from '@supabase/supabase-js';
+import { AuthState } from '../types';
 
 interface AuthStore extends AuthState {
   session: Session | null;
@@ -32,7 +32,7 @@ interface AuthStore extends AuthState {
   getSessionDuration: () => number;
   isSessionHealthy: () => boolean;
   clearError: () => void;
-  setUser: (user: SupabaseUser | null) => void;
+  setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   initialize: () => Promise<void>;
 }
@@ -532,7 +532,7 @@ export const useAuthStore = create<AuthStore>()(
 
       clearError: () => set({ error: null }),
       
-      setUser: (user: SupabaseUser | null) => set({ 
+      setUser: (user: User | null) => set({ 
         user, 
         isAuthenticated: !!user 
       }),

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import type { AppState, Theme, Project } from '../types';
+import { AppState, Theme, Project } from '../types';
 import { useAuthStore } from './useAuthStore';
 
 interface AppStore extends Omit<AppState, 'user' | 'isAuthenticated'> {
