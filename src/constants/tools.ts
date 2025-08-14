@@ -107,7 +107,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'crelbot',
     name: 'CrelBot',
-    description: 'AI-powered communication assistant for chat, paraphrasing, grammar, and translation',
+    description: 'AI-powered communication assistant with ChatGPT-like interface for chat, paraphrasing, grammar checking, and translation',
     icon: 'Bot',
     category: 'productivity',
     new: true,

@@ -9,16 +9,14 @@ import {
   MessageSquare,
   Copy,
   Volume2,
-  Download,
   Settings,
   Maximize2,
   Minimize2,
   RotateCcw,
-  Zap,
-  Globe,
-  BookOpen,
   Mic,
-  MicOff
+  MicOff,
+  Bot,
+  User
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -92,7 +90,7 @@ export const CrelBot: React.FC = () => {
     const welcomeMessage: Message = {
       id: crypto.randomUUID(),
       type: 'bot',
-      content: "Hello! I'm CrelBot, your AI-powered communication assistant. I can help you with:\n\n🗣️ **Chat** - Have natural conversations\n📝 **Paraphrase** - Rewrite text in different styles\n✅ **Grammar** - Check and correct your writing\n🌍 **Translate** - Convert text between languages\n\nWhat would you like to do today?",
+      content: "Hello! I'm CrelBot, your AI-powered communication assistant. I can help you with:\n\n🗣️ **Chat** - Have natural conversations and get answers\n📝 **Paraphrase** - Rewrite text in different styles\n✅ **Grammar** - Check and correct your writing\n🌍 **Translate** - Convert text between languages\n\nWhat would you like to do today?",
       timestamp: new Date(),
       mode: 'chat'
     };
@@ -188,7 +186,7 @@ export const CrelBot: React.FC = () => {
     const lowerInput = input.toLowerCase();
     
     if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-      return "Hello! I'm here to help you with all your communication needs. Whether you need to paraphrase text, check grammar, translate languages, or just have a conversation, I'm ready to assist!";
+      return "Hello! I'm CrelBot, your AI communication assistant. I'm here to help you with conversations, paraphrasing, grammar checking, and translations. How can I assist you today?";
     }
     
     if (lowerInput.includes('help')) {
@@ -206,8 +204,12 @@ export const CrelBot: React.FC = () => {
     if (lowerInput.includes('translate') || lowerInput.includes('language')) {
       return "I can translate text between multiple languages! Switch to Translate mode, select your target language in settings, and I'll provide accurate translations with context information.";
     }
+
+    if (lowerInput.includes('creldesk') || lowerInput.includes('tools')) {
+      return "CrelDesk is an amazing productivity suite! It includes tools for logo design, resume building, invoice generation, PDF compression, screen recording, and much more. I'm part of this ecosystem to help with your communication needs. What would you like to know about CrelDesk's tools?";
+    }
     
-    return "That's an interesting point! I'm here to help with your communication needs. Feel free to ask me questions, request paraphrasing, grammar checks, or translations. What would you like to work on?";
+    return "That's an interesting point! I'm here to help with your communication needs. Feel free to ask me questions, request paraphrasing, grammar checks, or translations. I can also chat about CrelDesk's tools and features. What would you like to work on?";
   };
 
   const handleSendMessage = async () => {
@@ -249,7 +251,7 @@ export const CrelBot: React.FC = () => {
     const welcomeMessage: Message = {
       id: crypto.randomUUID(),
       type: 'bot',
-      content: "Chat cleared! How can I help you today?",
+      content: "Chat cleared! I'm ready to help you again. What would you like to do?",
       timestamp: new Date(),
       mode: 'chat'
     };
@@ -274,15 +276,18 @@ export const CrelBot: React.FC = () => {
     }
   };
 
+  // Animated background variants
   const backgroundVariants = {
     animate: {
       background: [
         'linear-gradient(45deg, #f0f9ff, #e0f2fe, #f0f9ff)',
         'linear-gradient(90deg, #e0f2fe, #f0f9ff, #e0f2fe)',
         'linear-gradient(135deg, #f0f9ff, #e0f2fe, #f0f9ff)',
+        'linear-gradient(180deg, #e0f2fe, #f0f9ff, #e0f2fe)',
+        'linear-gradient(225deg, #f0f9ff, #e0f2fe, #f0f9ff)',
       ],
       transition: {
-        duration: 10,
+        duration: 15,
         repeat: Infinity,
         ease: "easeInOut"
       }
@@ -290,51 +295,90 @@ export const CrelBot: React.FC = () => {
   };
 
   return (
-    <div className={cn(
-      "min-h-screen transition-all duration-300",
-      isFullscreen ? "fixed inset-0 z-50" : "relative"
-    )}>
+    <div className="min-h-screen relative overflow-hidden">
       {/* Animated Background */}
       <motion.div
         variants={backgroundVariants}
         animate="animate"
-        className="absolute inset-0 opacity-50 dark:opacity-20"
-      >
-        {/* Floating Particles */}
-        {Array.from({ length: 20 }).map((_, i) => (
+        className="absolute inset-0 opacity-60 dark:opacity-30"
+      />
+
+      {/* Floating Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 30 }).map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-primary-400 rounded-full opacity-30"
+            className="absolute w-2 h-2 bg-primary-400 rounded-full opacity-40"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
             animate={{
-              y: [0, -20, 0],
-              x: [0, 10, -10, 0],
-              opacity: [0.3, 0.8, 0.3],
+              y: [0, -30, 0],
+              x: [0, 15, -15, 0],
+              opacity: [0.2, 0.8, 0.2],
+              scale: [1, 1.5, 1],
             }}
             transition={{
-              duration: 5 + Math.random() * 5,
+              duration: 8 + Math.random() * 4,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: Math.random() * 8,
+              ease: "easeInOut"
             }}
           />
         ))}
-      </motion.div>
+      </div>
+
+      {/* Geometric Shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={`shape-${i}`}
+            className="absolute border border-primary-300 dark:border-primary-600 opacity-20"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${20 + Math.random() * 40}px`,
+              height: `${20 + Math.random() * 40}px`,
+              borderRadius: Math.random() > 0.5 ? '50%' : '0%',
+            }}
+            animate={{
+              rotate: [0, 360],
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.3, 0.1],
+            }}
+            transition={{
+              duration: 20 + Math.random() * 10,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: "linear"
+            }}
+          />
+        ))}
+      </div>
 
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 p-4 shadow-sm">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles size={20} className="text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">CrelBot</h1>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">AI Communication Assistant</p>
+                <img 
+                  src="/Creldesk.png" 
+                  alt="CrelDesk Logo" 
+                  className="h-10 w-auto max-w-[180px] object-contain"
+                  width="180"
+                  height="40"
+                />
+                <div className="w-px h-8 bg-slate-300 dark:bg-slate-600"></div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Bot size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">CrelBot</h1>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">AI Communication Assistant</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -344,40 +388,36 @@ export const CrelBot: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSettings(!showSettings)}
+                className="hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Settings size={16} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsFullscreen(!isFullscreen)}
-              >
-                {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                <Settings size={18} />
               </Button>
             </div>
           </div>
 
           {/* Mode Selection */}
-          <div className="max-w-4xl mx-auto mt-4">
-            <div className="flex flex-wrap gap-2">
+          <div className="max-w-6xl mx-auto mt-6">
+            <div className="flex flex-wrap gap-3 justify-center">
               {(['chat', 'paraphrase', 'grammar', 'translate'] as const).map((mode) => {
                 const Icon = getModeIcon(mode);
                 const isActive = currentMode === mode;
                 
                 return (
-                  <Button
+                  <motion.button
                     key={mode}
                     onClick={() => setCurrentMode(mode)}
-                    variant={isActive ? "primary" : "outline"}
-                    size="sm"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "flex items-center space-x-2 transition-all duration-200",
-                      isActive && `bg-gradient-to-r ${getModeColor(mode)} text-white shadow-lg`
+                      "flex items-center space-x-3 px-6 py-3 rounded-2xl transition-all duration-300 shadow-sm",
+                      isActive 
+                        ? `bg-gradient-to-r ${getModeColor(mode)} text-white shadow-lg` 
+                        : "bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
                     )}
                   >
-                    <Icon size={16} />
-                    <span className="capitalize">{mode}</span>
-                  </Button>
+                    <Icon size={20} />
+                    <span className="font-medium capitalize">{mode}</span>
+                  </motion.button>
                 );
               })}
             </div>
@@ -390,63 +430,65 @@ export const CrelBot: React.FC = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="max-w-4xl mx-auto mt-4"
+                className="max-w-6xl mx-auto mt-6"
               >
-                <Card padding="md" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Translation Language
-                      </label>
-                      <select
-                        value={settings.language}
-                        onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-slate-100"
-                      >
-                        {LANGUAGES.map(lang => (
-                          <option key={lang.code} value={lang.code}>
-                            {lang.flag} {lang.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50">
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                          Translation Language
+                        </label>
+                        <select
+                          value={settings.language}
+                          onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
+                          className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-slate-100 transition-all duration-200"
+                        >
+                          {LANGUAGES.map(lang => (
+                            <option key={lang.code} value={lang.code}>
+                              {lang.flag} {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Grammar Level
-                      </label>
-                      <select
-                        value={settings.grammarLevel}
-                        onChange={(e) => setSettings(prev => ({ ...prev, grammarLevel: e.target.value as any }))}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-slate-100"
-                      >
-                        {GRAMMAR_LEVELS.map(level => (
-                          <option key={level.id} value={level.id}>
-                            {level.name} - {level.description}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                          Grammar Level
+                        </label>
+                        <select
+                          value={settings.grammarLevel}
+                          onChange={(e) => setSettings(prev => ({ ...prev, grammarLevel: e.target.value as any }))}
+                          className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-slate-100 transition-all duration-200"
+                        >
+                          {GRAMMAR_LEVELS.map(level => (
+                            <option key={level.id} value={level.id}>
+                              {level.name} - {level.description}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.voiceEnabled}
-                          onChange={(e) => setSettings(prev => ({ ...prev, voiceEnabled: e.target.checked }))}
-                          className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
-                        />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Voice Output</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.autoTranslate}
-                          onChange={(e) => setSettings(prev => ({ ...prev, autoTranslate: e.target.checked }))}
-                          className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
-                        />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Auto-translate</span>
-                      </label>
+                      <div className="space-y-4">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settings.voiceEnabled}
+                            onChange={(e) => setSettings(prev => ({ ...prev, voiceEnabled: e.target.checked }))}
+                            className="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 transition-all duration-200"
+                          />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Voice Output</span>
+                        </label>
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settings.autoTranslate}
+                            onChange={(e) => setSettings(prev => ({ ...prev, autoTranslate: e.target.checked }))}
+                            className="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 transition-all duration-200"
+                          />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Auto-translate</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -456,61 +498,74 @@ export const CrelBot: React.FC = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 max-w-4xl mx-auto w-full p-4">
-          <div className="h-[calc(100vh-300px)] overflow-y-auto space-y-4 mb-4">
+        <div className="flex-1 max-w-4xl mx-auto w-full p-6">
+          <div className="h-[calc(100vh-280px)] overflow-y-auto space-y-6 mb-6 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
             {messages.map((message) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
                 className={cn(
-                  "flex",
-                  message.type === 'user' ? "justify-end" : "justify-start"
+                  "flex items-start space-x-4",
+                  message.type === 'user' ? "flex-row-reverse space-x-reverse" : ""
                 )}
               >
+                {/* Avatar */}
                 <div className={cn(
-                  "max-w-[80%] rounded-2xl px-6 py-4 shadow-sm",
-                  message.type === 'user'
-                    ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white"
-                    : "bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700"
+                  "w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0",
+                  message.type === 'user' 
+                    ? "bg-gradient-to-br from-slate-500 to-slate-600" 
+                    : "bg-gradient-to-br from-primary-500 to-primary-600"
                 )}>
-                  {message.type === 'bot' && (
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-6 h-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
-                        <Sparkles size={12} className="text-white" />
-                      </div>
-                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                        {message.mode || 'chat'} mode
-                      </span>
-                    </div>
+                  {message.type === 'user' ? (
+                    <User size={20} className="text-white" />
+                  ) : (
+                    <Bot size={20} className="text-white" />
                   )}
-                  
-                  <div className="whitespace-pre-wrap leading-relaxed">
-                    {message.content}
-                  </div>
-                  
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-200/50 dark:border-slate-600/50">
-                    <span className="text-xs text-slate-400 dark:text-slate-500">
-                      {message.timestamp.toLocaleTimeString()}
-                    </span>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(message.content)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Copy size={12} />
-                      </Button>
-                      {settings.voiceEnabled && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
+                </div>
+
+                {/* Message Content */}
+                <div className={cn(
+                  "flex-1 max-w-[80%]",
+                  message.type === 'user' ? "text-right" : ""
+                )}>
+                  <div className={cn(
+                    "rounded-3xl px-6 py-4 shadow-sm backdrop-blur-sm border",
+                    message.type === 'user'
+                      ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white border-primary-400"
+                      : "bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border-slate-200/50 dark:border-slate-700/50"
+                  )}>
+                    {message.type === 'bot' && (
+                      <div className="flex items-center space-x-2 mb-3 pb-2 border-b border-slate-200/50 dark:border-slate-600/50">
+                        <Bot size={16} className="text-primary-500" />
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                          {message.mode || 'chat'} mode
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="whitespace-pre-wrap leading-relaxed text-sm">
+                      {message.content}
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-200/30 dark:border-slate-600/30">
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => copyToClipboard(message.content)}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200"
                         >
-                          <Volume2 size={12} />
-                        </Button>
-                      )}
+                          <Copy size={14} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
+                        </button>
+                        {settings.voiceEnabled && (
+                          <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200">
+                            <Volume2 size={14} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -519,22 +574,22 @@ export const CrelBot: React.FC = () => {
             
             {isProcessing && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-start"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start space-x-4"
               >
-                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl px-6 py-4 border border-slate-200 dark:border-slate-700">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Bot size={20} className="text-white" />
+                </div>
+                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-3xl px-6 py-4 border border-slate-200/50 dark:border-slate-700/50">
                   <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
-                      <Sparkles size={12} className="text-white" />
-                    </div>
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                       <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                     <span className="text-sm text-slate-600 dark:text-slate-400">
-                      Processing...
+                      CrelBot is thinking...
                     </span>
                   </div>
                 </div>
@@ -545,17 +600,17 @@ export const CrelBot: React.FC = () => {
           </div>
 
           {/* Input Area */}
-          <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200 dark:border-slate-700">
-            <div className="p-4">
-              <div className="flex items-end space-x-3">
+          <Card className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl">
+            <div className="p-6">
+              <div className="flex items-end space-x-4">
                 <div className="flex-1">
                   <textarea
                     ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder={`Type your ${currentMode === 'chat' ? 'message' : `text to ${currentMode}`}...`}
-                    className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-slate-100 transition-all duration-200"
+                    placeholder={`Message CrelBot${currentMode !== 'chat' ? ` (${currentMode} mode)` : ''}...`}
+                    className="w-full px-4 py-4 border border-slate-300 dark:border-slate-600 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-slate-800 dark:text-slate-100 transition-all duration-200 text-sm leading-relaxed"
                     rows={3}
                     disabled={isProcessing}
                   />
@@ -565,7 +620,7 @@ export const CrelBot: React.FC = () => {
                   <Button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isProcessing}
-                    className="w-12 h-12 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="w-14 h-14 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send size={20} className="text-white" />
                   </Button>
@@ -574,24 +629,27 @@ export const CrelBot: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={clearChat}
-                    className="w-12 h-8"
+                    className="w-14 h-10 rounded-xl border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
-                    <RotateCcw size={14} />
+                    <RotateCcw size={16} />
                   </Button>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
                   <span>Press Enter to send, Shift+Enter for new line</span>
                   <span>•</span>
-                  <span className="capitalize">{currentMode} mode active</span>
+                  <span className="capitalize font-medium text-primary-600 dark:text-primary-400">
+                    {currentMode} mode active
+                  </span>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   {currentMode === 'translate' && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      → {LANGUAGES.find(l => l.code === settings.language)?.flag} {LANGUAGES.find(l => l.code === settings.language)?.name}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-1">
+                      <Languages size={12} />
+                      <span>→ {LANGUAGES.find(l => l.code === settings.language)?.flag} {LANGUAGES.find(l => l.code === settings.language)?.name}</span>
                     </span>
                   )}
                 </div>
