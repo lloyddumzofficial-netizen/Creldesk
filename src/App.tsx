@@ -133,8 +133,6 @@ function App() {
     <OnboardingWrapper>
       <MainApp />
     </OnboardingWrapper>
-      <MainApp />
-    </OnboardingWrapper>
   );
 }
 
