@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Upload, X, User, Mail, Phone, MapPin, Globe, Linkedin, Calendar, GraduationCap, Award, Star, Plus, Trash2, Edit3, Save, Eye, Palette, FileText } from 'lucide-react';
 import {
-  Download, 
   Eye, 
   Upload, 
   Plus, 
