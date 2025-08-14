@@ -21,6 +21,7 @@ import { ColorPicker } from './components/tools/ColorPicker';
 import { PomodoroTimer } from './components/tools/PomodoroTimer';
 import { TaskBoard } from './components/tools/TaskBoard';
 import { Crelbot } from './components/ai/Crelbot';
+import { CrelBot } from './components/tools/CrelBot';
 import { TOOLS } from './constants/tools';
 
 function App() {
@@ -262,6 +263,17 @@ const MainApp: React.FC = () => {
           showFooterAd={false}
         >
           <TaskBoard />
+        </ToolWrapper>
+      ),
+      'crelbot': (
+        <ToolWrapper
+          title={tool.name}
+          description={tool.description}
+          showHeaderAd={false}
+          showSidebarAd={false}
+          showFooterAd={false}
+        >
+          <CrelBot />
         </ToolWrapper>
       ),
     };

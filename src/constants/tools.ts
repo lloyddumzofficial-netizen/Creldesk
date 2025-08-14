@@ -104,6 +104,14 @@ export const TOOLS: Tool[] = [
     icon: 'Trello',
     category: 'productivity',
   },
+  {
+    id: 'crelbot',
+    name: 'CrelBot',
+    description: 'AI-powered communication assistant for chat, paraphrasing, grammar, and translation',
+    icon: 'Bot',
+    category: 'productivity',
+    new: true,
+  },
 ];
 
 export const TOOL_CATEGORIES = [
