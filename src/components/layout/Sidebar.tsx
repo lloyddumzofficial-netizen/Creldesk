@@ -117,25 +117,25 @@ export const Sidebar: React.FC = () => {
               initial="collapsed"
               animate="expanded"
               exit="collapsed"
-              className="px-4 mb-8"
+              className="px-6 mb-10"
             >
-              <div className="flex items-center space-x-2 mb-4 px-2">
+              <div className="flex items-center space-x-3 mb-6 px-1">
                 <div className="w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
                   <Clock size={12} className="text-white" />
                 </div>
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Recent Projects</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-wide">Recent Projects</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {recentProjects.map((project, index) => (
                   <motion.button
                     key={project.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm text-slate-600 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60 hover:shadow-sm"
                   >
-                    <div className="font-medium truncate">{project.name}</div>
-                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                    <div className="font-medium truncate text-sm">{project.name}</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                       {new Date(project.updatedAt).toLocaleDateString()}
                     </div>
                   </motion.button>
@@ -156,16 +156,16 @@ export const Sidebar: React.FC = () => {
           return (
             <motion.div 
               key={category.id} 
-              className="mb-8"
+              className="mb-10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: categoryIndex * 0.1 }}
             >
               <div className={cn(
-                "flex items-center px-6 mb-4",
+                "flex items-center px-6 mb-5",
                 sidebarCollapsed ? "justify-center" : "space-x-3"
               )}>
-                <div className="w-6 h-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-sm">
+                <div className="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-md">
                   <CategoryIcon size={12} className="text-white" />
                 </div>
                 <AnimatePresence>
@@ -177,10 +177,10 @@ export const Sidebar: React.FC = () => {
                       exit="collapsed"
                       className="flex items-center space-x-2"
                     >
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                         {category.name}
                       </span>
-                      <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center shadow-sm">
                         <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
                           {categoryTools.length}
                         </span>
@@ -190,7 +190,7 @@ export const Sidebar: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              <div className="space-y-1 px-3">
+              <div className="space-y-2 px-4">
                 {categoryTools.map((tool, toolIndex) => {
                   const ToolIcon = (LucideIcons as any)[tool.icon];
                   const isActive = currentTool === tool.id;
@@ -206,10 +206,10 @@ export const Sidebar: React.FC = () => {
                       whileTap={{ scale: 0.98 }}
                       className={cn(
                         "w-full flex items-center rounded-xl transition-all duration-300 group relative overflow-hidden",
-                        sidebarCollapsed ? "p-3 justify-center" : "p-3 space-x-3",
+                        sidebarCollapsed ? "p-3.5 justify-center" : "p-3.5 space-x-3",
                         isActive
-                          ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/25"
-                          : "hover:bg-white/60 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60"
+                          ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30"
+                          : "hover:bg-white/70 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent hover:border-slate-200/60 dark:hover:border-slate-700/60 hover:shadow-sm"
                       )}
                     >
                       {/* Background gradient for active state */}
@@ -221,12 +221,12 @@ export const Sidebar: React.FC = () => {
                       )}
                       
                       <div className={cn(
-                        "relative z-10 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200",
+                        "relative z-10 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm",
                         isActive 
                           ? "bg-white/20 backdrop-blur-sm" 
                           : "bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
                       )}>
-                        <ToolIcon size={16} className={cn(
+                        <ToolIcon size={17} className={cn(
                           "transition-colors duration-200",
                           isActive 
                             ? "text-white" 
@@ -244,9 +244,9 @@ export const Sidebar: React.FC = () => {
                             className="flex-1 text-left relative z-10"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{tool.name}</span>
+                              <span className="text-sm font-medium tracking-wide">{tool.name}</span>
                               {tool.new && (
-                                <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs rounded-full font-medium">
+                                <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs rounded-full font-medium shadow-sm">
                                   New
                                 </span>
                               )}
@@ -255,7 +255,7 @@ export const Sidebar: React.FC = () => {
                               )}
                             </div>
                             {!isActive && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 leading-relaxed">
                                 {tool.description}
                               </p>
                             )}
@@ -279,10 +279,10 @@ export const Sidebar: React.FC = () => {
             initial="collapsed"
             animate="expanded"
             exit="collapsed"
-            className="p-4 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/30 dark:bg-slate-900/30"
+            className="p-6 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm"
           >
             <div className="text-center">
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">
                 All you need. In one desk.
               </p>
             </div>
