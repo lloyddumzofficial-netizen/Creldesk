@@ -97,6 +97,13 @@ export const TOOLS: Tool[] = [
     icon: 'Timer',
     category: 'utilities',
   },
+  {
+    id: 'task-board',
+    name: 'Task Board',
+    description: 'Kanban-style task management with drag-and-drop',
+    icon: 'Trello',
+    category: 'productivity',
+  },
 ];
 
 export const TOOL_CATEGORIES = [

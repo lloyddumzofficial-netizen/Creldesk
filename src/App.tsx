@@ -18,6 +18,7 @@ import { QRCodeGenerator } from './components/tools/QRCodeGenerator';
 import { PasswordGenerator } from './components/tools/PasswordGenerator';
 import { ColorPicker } from './components/tools/ColorPicker';
 import { PomodoroTimer } from './components/tools/PomodoroTimer';
+import { TaskBoard } from './components/tools/TaskBoard';
 import { Crelbot } from './components/ai/Crelbot';
 import { TOOLS } from './constants/tools';
 
@@ -239,6 +240,17 @@ function App() {
           description={tool.description}
         >
           <PomodoroTimer />
+        </ToolWrapper>
+      ),
+      'task-board': (
+        <ToolWrapper
+          title={tool.name}
+          description={tool.description}
+          showHeaderAd={false}
+          showSidebarAd={false}
+          showFooterAd={false}
+        >
+          <TaskBoard />
         </ToolWrapper>
       ),
     };
