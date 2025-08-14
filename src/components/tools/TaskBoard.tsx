@@ -29,8 +29,8 @@ interface Column {
 
 const COLUMNS: Column[] = [
   { id: 'todo', title: 'To Do', color: 'bg-slate-100 dark:bg-slate-800' },
-  { id: 'inprogress', title: 'In Progress', color: 'bg-blue-50 dark:bg-blue-900/20' },
-  { id: 'done', title: 'Done', color: 'bg-green-50 dark:bg-green-900/20' }
+  { id: 'inprogress', title: 'In Progress', color: 'bg-slate-700 dark:bg-slate-700' },
+  { id: 'done', title: 'Done', color: 'bg-slate-800 dark:bg-slate-800' }
 ];
 
 const PRIORITY_COLORS = {
@@ -526,9 +526,8 @@ export const TaskBoard: React.FC = () => {
             )}
             <Button
               variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="p-2"
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
@@ -571,23 +570,21 @@ export const TaskBoard: React.FC = () => {
                     <span className={cn(
                       "text-xs px-2.5 py-1 rounded-full font-medium",
                       column.id === 'todo' && "bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-300",
-                      column.id === 'inprogress' && "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
-                      column.id === 'done' && "bg-emerald-100 text-emerald-700 dark:bg-green-900/50 dark:text-green-300"
+                      column.id === 'inprogress' && "bg-white text-slate-700",
+                      column.id === 'done' && "bg-white text-slate-700"
                     )}>
                       {columnTasks.length}
                     </span>
                   </div>
-                  
-                  <Button
-                    variant="ghost"
+                    initial={{ opacity: 1, x: 0 }}
+                    animate={{ opacity: 1, x: 0 }}
                     size="sm"
                     onClick={() => createTask(column.id)}
                     className={cn(
                       "p-2 rounded-lg transition-all duration-200",
                       column.id === 'todo' && "hover:bg-slate-100 dark:hover:bg-gray-800/50",
-                      column.id === 'inprogress' && "hover:bg-blue-100 dark:hover:bg-blue-800/50",
-                      column.id === 'done' && "hover:bg-emerald-100 dark:hover:bg-green-800/50"
-                    )}
+                    initial={{ opacity: 1, x: 0 }}
+                    animate={{ opacity: 1, x: 0 }}
                     disabled={saving}
                   >
                     <Plus size={16} />
@@ -690,13 +687,13 @@ export const TaskBoard: React.FC = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') handleEditEnd();
                                 }}
-                                className="w-full h-full bg-transparent border-none outline-none text-sm text-slate-600 dark:text-gray-300 resize-none"
+                                className="w-full h-full bg-transparent border-none outline-none text-sm text-slate-600 dark:text-gray-300 resize-none overflow-hidden"
                                 placeholder="Add description..."
                               />
                             ) : (
                               <p
                                 onClick={() => handleEditStart(task.id, 'description')}
-                                className="text-sm text-slate-600 dark:text-gray-300 cursor-text hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1 -mx-2 -my-1 transition-all duration-200 h-full overflow-hidden leading-relaxed"
+                                className="text-sm text-slate-600 dark:text-gray-300 cursor-text hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg px-2 py-1 -mx-2 -my-1 transition-all duration-200 h-full overflow-hidden leading-relaxed line-clamp-3"
                               >
                                 {task.description || <span className="opacity-50">Add description...</span>}
                               </p>
