@@ -999,57 +999,59 @@ export const LogoEditor: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-slate-900 text-white overflow-hidden">
       {/* Top Menu Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-6 h-6 text-blue-400" />
-            <span className="font-bold text-lg">Logo Studio Pro</span>
+      <div className="sticky top-0 z-50 bg-slate-800 border-b border-slate-700 p-3 shadow-lg">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-6 h-6 text-blue-400" />
+              <span className="font-bold text-lg">Logo Studio Pro</span>
+            </div>
+            
+            <div className="flex items-center space-x-1">
+              <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <FolderOpen size={16} className="mr-1" />
+                Open
+              </Button>
+              <Button variant="ghost" size="sm">
+                <Save size={16} className="mr-1" />
+                Save
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => exportCanvas('png')}>
+                <Download size={16} className="mr-1" />
+                Export
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
-              <FolderOpen size={16} className="mr-1" />
-              Open
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Save size={16} className="mr-1" />
-              Save
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => exportCanvas('png')}>
-              <Download size={16} className="mr-1" />
-              Export
-            </Button>
-          </div>
-        </div>
 
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" onClick={undo} disabled={historyIndex <= 0}>
-            <Undo size={16} />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1}>
-            <Redo size={16} />
-          </Button>
-          
-          <div className="w-px h-6 bg-slate-600 mx-2" />
-          
-          <Button variant="ghost" size="sm" onClick={zoomOut}>
-            <ZoomOut size={16} />
-          </Button>
-          <span className="text-sm font-mono min-w-[60px] text-center">
-            {Math.round(canvasState.zoom * 100)}%
-          </span>
-          <Button variant="ghost" size="sm" onClick={zoomIn}>
-            <ZoomIn size={16} />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={resetZoom}>
-            <Target size={16} />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" onClick={undo} disabled={historyIndex <= 0}>
+              <Undo size={16} />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1}>
+              <Redo size={16} />
+            </Button>
+            
+            <div className="w-px h-6 bg-slate-600 mx-2" />
+            
+            <Button variant="ghost" size="sm" onClick={zoomOut}>
+              <ZoomOut size={16} />
+            </Button>
+            <span className="text-sm font-mono min-w-[60px] text-center">
+              {Math.round(canvasState.zoom * 100)}%
+            </span>
+            <Button variant="ghost" size="sm" onClick={zoomIn}>
+              <ZoomIn size={16} />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetZoom}>
+              <Target size={16} />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
         {/* Left Tool Palette */}
-        <div className="w-16 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2">
+        <div className="w-16 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 space-y-2 overflow-y-auto">
           {TOOLS.map((tool) => {
             const Icon = tool.icon;
             return (
@@ -1157,7 +1159,7 @@ export const LogoEditor: React.FC = () => {
           {/* Canvas Container */}
           <div 
             ref={containerRef}
-            className="flex-1 bg-slate-700 overflow-hidden relative"
+            className="flex-1 bg-slate-800 relative overflow-hidden min-h-0"
             style={{ 
               backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
               backgroundSize: '20px 20px'
@@ -1199,17 +1201,13 @@ export const LogoEditor: React.FC = () => {
               animate={{ width: 300, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className={`bg-slate-800 border-l border-slate-700 overflow-hidden transition-all duration-200 ${
-                isPanning || spacePressed 
-                  ? 'bg-slate-700/90 backdrop-blur-sm border-l-2 border-turquoise-500' 
-                  : 'bg-slate-800'
-              }`}
+              className="w-80 bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden"
             >
               <div className="w-[300px] h-full overflow-y-auto">
                 <div className="p-4 space-y-6">
                   {/* Fill & Stroke */}
                   <Card className="bg-slate-700 border-slate-600">
-                    <div className="p-4">
+                    <div className="border-b border-slate-200 dark:border-slate-700 p-4 flex-shrink-0">
                       <h3 className="font-semibold mb-4 flex items-center">
                         <Palette size={16} className="mr-2" />
                         Fill & Stroke
@@ -1530,7 +1528,12 @@ export const LogoEditor: React.FC = () => {
           >
             <div className="h-[200px] flex">
               {/* Layers */}
-              <div className="flex-1 p-4">
+              <div 
+                className={cn(
+                  "flex-1 p-4 transition-all duration-200 overflow-y-auto min-h-0",
+                  isPanning && "bg-slate-100/80 dark:bg-slate-700/80 backdrop-blur-sm border-2 border-turquoise-500/50"
+                )}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center">
                     <Layers size={16} className="mr-2" />
@@ -1611,7 +1614,7 @@ export const LogoEditor: React.FC = () => {
               </div>
 
               {/* Assets */}
-              <div className="w-64 border-l border-slate-700 p-4">
+              <div className="border-t border-slate-200 dark:border-slate-700 p-4 flex-shrink-0 max-h-60 overflow-y-auto">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center">
                     <Shapes size={16} className="mr-2" />
