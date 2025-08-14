@@ -271,7 +271,7 @@ export const ProposalGenerator: React.FC = () => {
         </div>
 
         {/* Preview */}
-        <div className="lg:sticky lg:top-6">
+        <div className="sticky top-6">
           <Card padding="md">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Preview</h3>
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-sm max-h-[800px] overflow-y-auto">

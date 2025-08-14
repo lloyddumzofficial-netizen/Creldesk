@@ -51,7 +51,7 @@ export const ToolWrapper: React.FC<ToolWrapperProps> = ({
         {/* Sidebar with Ad */}
         {showSidebarAd && (
           <div className="hidden xl:block w-80 pr-6">
-            <div className="sticky top-24 space-y-6 pl-6">
+            <div className="sticky top-6 space-y-6 pl-6">
               {/* Header Ad moved to sidebar */}
               {showHeaderAd && (
                 <AdUnit placement="sidebar" size="300x250" />

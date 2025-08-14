@@ -1535,7 +1535,7 @@ export const ResumeBuilder: React.FC = () => {
         </div>
 
         {/* Preview Section */}
-        <div className="space-y-4">
+        <div className="sticky top-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Eye size={20} className="text-blue-500" />
