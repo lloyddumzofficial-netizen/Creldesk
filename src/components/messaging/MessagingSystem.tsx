@@ -259,7 +259,7 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                 </div>
               ) : (
                 <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                  <User size={32} className="mx-auto mb-2 opacity-50" />
+                  <Users size={32} className="mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No users found</p>
                   <p className="text-xs mt-1">Try searching by name, email, or user ID</p>
                 </div>
@@ -352,74 +352,6 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
                             {conversation.unread_count > 0 && (
                               <div className="w-5 h-5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
                                 {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                <MessageCircle size={48} className="text-slate-400 mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                  No conversations yet
-                </h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  Search for users above to start a conversation
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto">
-            {conversations.length > 0 ? (
-              <div className="space-y-1 p-2">
-                {conversations.map((conversation) => {
-                  const otherUser = getOtherParticipant(conversation);
-                  if (!otherUser) return null;
-
-                  return (
-                    <div
-                      key={conversation.id}
-                      onClick={() => setCurrentConversation(conversation)}
-                      className={cn(
-                        "p-3 rounded-lg cursor-pointer transition-colors",
-                        currentConversation?.id === conversation.id
-                          ? "bg-primary-100 dark:bg-primary-900/20"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-700"
-                      )}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-medium">
-                            {otherUser.avatar_url ? (
-                              <img src={otherUser.avatar_url} alt={otherUser.name} className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                              otherUser.name.charAt(0).toUpperCase()
-                            )}
-                          </div>
-                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(otherUser.status)} rounded-full border-2 border-white dark:border-slate-800`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                              {otherUser.name}
-                            </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {conversation.last_message && formatTime(conversation.last_message.created_at)}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                              {conversation.last_message?.content || 'No messages yet'}
-                            </div>
-                            {conversation.unread_count > 0 && (
-                              <div className="w-5 h-5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
-                                {conversation.unread_count}
                               </div>
                             )}
                           </div>
