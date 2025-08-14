@@ -4,6 +4,7 @@ import { useAuthStore } from './stores/useAuthStore';
 import { LandingPage } from './components/LandingPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { OnboardingWrapper } from './components/onboarding/OnboardingWrapper';
+import { OnboardingWrapper } from './components/onboarding/OnboardingWrapper';
 import { Dashboard } from './components/Dashboard';
 import { ToolWrapper } from './components/tools/ToolWrapper';
 import { PhotopeaEditor } from './components/tools/PhotopeaEditor';
@@ -131,6 +132,8 @@ function App() {
 
   return (
     <OnboardingWrapper>
+      <MainApp />
+    </OnboardingWrapper>
       <MainApp />
     </OnboardingWrapper>
   );

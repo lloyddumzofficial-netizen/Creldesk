@@ -28,15 +28,20 @@ export const OnboardingWrapper: React.FC<OnboardingWrapperProps> = ({ children }
 
       try {
         // Check if user has completed onboarding
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('onboarding_completed')
           .eq('id', user.id)
           .single();
 
-        // If profile doesn't have onboarding data, show survey
-        const needsOnboarding = !profile?.onboarding_completed;
-        setShowOnboarding(needsOnboarding);
+        if (error) {
+          console.error('Error checking onboarding status:', error);
+          // If we can't check, assume they need onboarding
+          setShowOnboarding(true);
+        } else {
+          // Show onboarding if not completed
+          setShowOnboarding(!profile?.onboarding_completed);
+        }
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         // Default to showing onboarding if we can't determine status
@@ -54,7 +59,7 @@ export const OnboardingWrapper: React.FC<OnboardingWrapperProps> = ({ children }
 
     try {
       // Save onboarding data to user profile
-      await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({
           role: data.role,
@@ -62,10 +67,16 @@ export const OnboardingWrapper: React.FC<OnboardingWrapperProps> = ({ children }
           goals: data.goals,
           experience_level: data.experience,
           onboarding_completed: true,
+          onboarding_completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
+      if (error) {
+        console.error('Error saving onboarding data:', error);
+      }
+
+      // Always proceed to dashboard, even if save fails
       setShowOnboarding(false);
     } catch (error) {
       console.error('Error saving onboarding data:', error);
