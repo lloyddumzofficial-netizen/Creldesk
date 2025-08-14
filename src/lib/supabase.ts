@@ -66,6 +66,46 @@ export interface Database {
           updated_at?: string;
         };
       };
+      tasks: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string;
+          column: 'todo' | 'inprogress' | 'done';
+          priority: 'low' | 'medium' | 'high';
+          position: number;
+          width: number;
+          height: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string;
+          description?: string;
+          column?: 'todo' | 'inprogress' | 'done';
+          priority?: 'low' | 'medium' | 'high';
+          position?: number;
+          width?: number;
+          height?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          description?: string;
+          column?: 'todo' | 'inprogress' | 'done';
+          priority?: 'low' | 'medium' | 'high';
+          position?: number;
+          width?: number;
+          height?: number;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

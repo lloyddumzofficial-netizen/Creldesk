@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Check, GripVertical, MoreHorizontal, Sun, Moon } from 'lucide-react';
+import { Plus, Trash2, Check, GripVertical, Sun, Moon, Loader, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useAppStore } from '../../stores/useAppStore';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../hooks/useToast';
 import { cn } from '../../utils/cn';
 
 interface Task {
@@ -12,10 +15,10 @@ interface Task {
   column: 'todo' | 'inprogress' | 'done';
   priority: 'low' | 'medium' | 'high';
   position: number;
+  width: number;
+  height: number;
   createdAt: string;
   updatedAt: string;
-  width?: number;
-  height?: number;
 }
 
 interface Column {
@@ -44,107 +47,285 @@ const PRIORITY_LABELS = {
 
 export const TaskBoard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [resizingTask, setResizingTask] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const dragPreviewRef = useRef<HTMLDivElement>(null);
   const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   
-  // Use app theme instead of local theme state
   const { theme, toggleTheme } = useAppStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const { toast } = useToast();
   const isDarkMode = theme === 'dark';
 
-  // Initialize from localStorage
-  useEffect(() => {
-    const savedTasks = localStorage.getItem('kanban-tasks');
-    
-    if (savedTasks) {
-      try {
-        setTasks(JSON.parse(savedTasks));
-      } catch (error) {
-        console.error('Error loading tasks:', error);
-      }
-    }
-  }, []);
+  // Load tasks from Supabase
+  const loadTasks = async () => {
+    if (!user || !isAuthenticated) return;
 
-  // Save to localStorage whenever tasks change
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('position', { ascending: true });
+
+      if (error) {
+        console.error('Error loading tasks:', error);
+        setError('Failed to load tasks');
+        toast.error('Failed to load tasks', error.message);
+        return;
+      }
+
+      const formattedTasks: Task[] = (data || []).map(task => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        column: task.column,
+        priority: task.priority,
+        position: task.position,
+        width: task.width,
+        height: task.height,
+        createdAt: task.created_at,
+        updatedAt: task.updated_at,
+      }));
+
+      setTasks(formattedTasks);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+      setError('Failed to load tasks');
+      toast.error('Failed to load tasks', 'Please try refreshing the page');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save task to Supabase
+  const saveTask = async (task: Partial<Task> & { id?: string }) => {
+    if (!user || !isAuthenticated) return null;
+
+    try {
+      setSaving(true);
+
+      if (task.id) {
+        // Update existing task
+        const { data, error } = await supabase
+          .from('tasks')
+          .update({
+            title: task.title,
+            description: task.description,
+            column: task.column,
+            priority: task.priority,
+            position: task.position,
+            width: task.width,
+            height: task.height,
+          })
+          .eq('id', task.id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating task:', error);
+          toast.error('Failed to update task', error.message);
+          return null;
+        }
+
+        return data;
+      } else {
+        // Create new task
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert({
+            user_id: user.id,
+            title: task.title || 'New Task',
+            description: task.description || '',
+            column: task.column || 'todo',
+            priority: task.priority || 'medium',
+            position: task.position || 0,
+            width: task.width || 280,
+            height: task.height || 120,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating task:', error);
+          toast.error('Failed to create task', error.message);
+          return null;
+        }
+
+        return data;
+      }
+    } catch (error) {
+      console.error('Error saving task:', error);
+      toast.error('Failed to save task', 'Please try again');
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Delete task from Supabase
+  const deleteTaskFromDB = async (taskId: string) => {
+    if (!user || !isAuthenticated) return false;
+
+    try {
+      setSaving(true);
+
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting task:', error);
+        toast.error('Failed to delete task', error.message);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task', 'Please try again');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Initialize tasks when user is authenticated
   useEffect(() => {
-    localStorage.setItem('kanban-tasks', JSON.stringify(tasks));
-  }, [tasks]);
+    if (isAuthenticated && user) {
+      loadTasks();
+    } else {
+      setTasks([]);
+      setLoading(false);
+    }
+  }, [isAuthenticated, user]);
 
   const generateId = () => crypto.randomUUID();
 
-  const createTask = (column: 'todo' | 'inprogress' | 'done') => {
-    const newTask: Task = {
-      id: generateId(),
+  const createTask = async (column: 'todo' | 'inprogress' | 'done') => {
+    const columnTasks = tasks.filter(t => t.column === column);
+    const position = columnTasks.length;
+
+    const newTaskData = {
       title: 'New Task',
       description: '',
       column,
-      priority: 'medium',
-      position: tasks.filter(t => t.column === column).length,
+      priority: 'medium' as const,
+      position,
+      width: 280,
+      height: 120,
+    };
+
+    // Optimistically add to UI
+    const tempId = generateId();
+    const tempTask: Task = {
+      id: tempId,
+      ...newTaskData,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      width: 280,
-      height: 120
     };
-    
-    setTasks(prev => [...prev, newTask]);
-    setEditingTask(newTask.id);
+
+    setTasks(prev => [...prev, tempTask]);
+    setEditingTask(tempId);
     setEditingField('title');
+
+    // Save to database
+    const savedTask = await saveTask(newTaskData);
+    if (savedTask) {
+      // Replace temp task with real task
+      setTasks(prev => prev.map(task => 
+        task.id === tempId 
+          ? {
+              id: savedTask.id,
+              title: savedTask.title,
+              description: savedTask.description,
+              column: savedTask.column,
+              priority: savedTask.priority,
+              position: savedTask.position,
+              width: savedTask.width,
+              height: savedTask.height,
+              createdAt: savedTask.created_at,
+              updatedAt: savedTask.updated_at,
+            }
+          : task
+      ));
+      setEditingTask(savedTask.id);
+    } else {
+      // Remove temp task if save failed
+      setTasks(prev => prev.filter(task => task.id !== tempId));
+      setEditingTask(null);
+      setEditingField(null);
+    }
   };
 
-  const updateTask = (taskId: string, updates: Partial<Task>) => {
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    // Optimistically update UI
     setTasks(prev => prev.map(task => 
       task.id === taskId 
         ? { ...task, ...updates, updatedAt: new Date().toISOString() }
         : task
     ));
+
+    // Save to database
+    const updatedTask = tasks.find(t => t.id === taskId);
+    if (updatedTask) {
+      await saveTask({ ...updatedTask, ...updates, id: taskId });
+    }
   };
 
-  const deleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
+  const deleteTask = async (taskId: string) => {
+    const success = await deleteTaskFromDB(taskId);
+    if (success) {
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+      toast.success('Task deleted', 'Task has been successfully deleted');
+    }
     setDeleteConfirm(null);
   };
 
-  const moveTask = (taskId: string, newColumn: 'todo' | 'inprogress' | 'done', newPosition: number) => {
-    setTasks(prev => {
-      const task = prev.find(t => t.id === taskId);
-      if (!task) return prev;
+  const moveTask = async (taskId: string, newColumn: 'todo' | 'inprogress' | 'done', newPosition: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
 
-      // Remove task from current position
-      const withoutTask = prev.filter(t => t.id !== taskId);
+    // Calculate new positions for all affected tasks
+    const updatedTasks = tasks.map(t => {
+      if (t.id === taskId) {
+        return { ...t, column: newColumn, position: newPosition };
+      }
       
       // Adjust positions in old column
-      const adjustedTasks = withoutTask.map(t => 
-        t.column === task.column && t.position > task.position
-          ? { ...t, position: t.position - 1 }
-          : t
-      );
-
+      if (t.column === task.column && t.position > task.position) {
+        return { ...t, position: t.position - 1 };
+      }
+      
       // Adjust positions in new column
-      const finalTasks = adjustedTasks.map(t => 
-        t.column === newColumn && t.position >= newPosition
-          ? { ...t, position: t.position + 1 }
-          : t
-      );
-
-      // Add task to new position
-      const updatedTask = {
-        ...task,
-        column: newColumn,
-        position: newPosition,
-        updatedAt: new Date().toISOString()
-      };
-
-      return [...finalTasks, updatedTask];
+      if (t.column === newColumn && t.position >= newPosition) {
+        return { ...t, position: t.position + 1 };
+      }
+      
+      return t;
     });
+
+    setTasks(updatedTasks);
+
+    // Save the moved task to database
+    await saveTask({ ...task, column: newColumn, position: newPosition, id: taskId });
   };
 
-  const cyclePriority = (taskId: string) => {
+  const cyclePriority = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -152,7 +333,7 @@ export const TaskBoard: React.FC = () => {
     const currentIndex = priorities.indexOf(task.priority);
     const nextPriority = priorities[(currentIndex + 1) % priorities.length];
     
-    updateTask(taskId, { priority: nextPriority });
+    await updateTask(taskId, { priority: nextPriority });
   };
 
   // Drag and Drop handlers
@@ -161,7 +342,6 @@ export const TaskBoard: React.FC = () => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', e.currentTarget.outerHTML);
     
-    // Create custom drag preview
     if (dragPreviewRef.current) {
       e.dataTransfer.setDragImage(dragPreviewRef.current, 0, 0);
     }
@@ -179,7 +359,7 @@ export const TaskBoard: React.FC = () => {
     }
   };
 
-  const handleDrop = (e: React.DragEvent, column: 'todo' | 'inprogress' | 'done') => {
+  const handleDrop = async (e: React.DragEvent, column: 'todo' | 'inprogress' | 'done') => {
     e.preventDefault();
     setDragOverColumn(null);
     
@@ -188,7 +368,7 @@ export const TaskBoard: React.FC = () => {
     const columnTasks = tasks.filter(t => t.column === column);
     const newPosition = columnTasks.length;
     
-    moveTask(draggedTask.id, column, newPosition);
+    await moveTask(draggedTask.id, column, newPosition);
     setDraggedTask(null);
   };
 
@@ -209,8 +389,8 @@ export const TaskBoard: React.FC = () => {
     resizeStartRef.current = {
       x: e.clientX,
       y: e.clientY,
-      width: task.width || 280,
-      height: task.height || 120
+      width: task.width,
+      height: task.height
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -247,9 +427,9 @@ export const TaskBoard: React.FC = () => {
     setEditingField(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, taskId: string, field: 'title' | 'description', value: string) => {
+  const handleKeyDown = async (e: React.KeyboardEvent, taskId: string, field: 'title' | 'description', value: string) => {
     if (e.key === 'Enter' && field === 'title') {
-      updateTask(taskId, { [field]: value });
+      await updateTask(taskId, { [field]: value });
       handleEditEnd();
     } else if (e.key === 'Escape') {
       handleEditEnd();
@@ -262,6 +442,39 @@ export const TaskBoard: React.FC = () => {
       .sort((a, b) => a.position - b.position);
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader className="w-8 h-8 animate-spin text-primary-500 mx-auto" />
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Loading Task Board</h3>
+            <p className="text-slate-600 dark:text-slate-400">Getting your tasks ready...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Failed to Load Tasks</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+            <Button onClick={loadTasks}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("min-h-screen transition-colors duration-200", isDarkMode ? "bg-gray-900" : "bg-gray-50")}>
       {/* Header */}
@@ -272,14 +485,22 @@ export const TaskBoard: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400">Organize your work with drag-and-drop simplicity</p>
           </div>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleTheme}
-            className="p-2"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </Button>
+          <div className="flex items-center space-x-2">
+            {saving && (
+              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>Saving...</span>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="p-2"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -317,6 +538,7 @@ export const TaskBoard: React.FC = () => {
                     size="sm"
                     onClick={() => createTask(column.id)}
                     className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50"
+                    disabled={saving}
                   >
                     <Plus size={16} />
                   </Button>
@@ -343,8 +565,8 @@ export const TaskBoard: React.FC = () => {
                           draggedTask?.id === task.id && "opacity-50 rotate-2 scale-105"
                         )}
                         style={{
-                          width: task.width || 280,
-                          height: task.height || 120,
+                          width: task.width,
+                          height: task.height,
                           minWidth: 200,
                           minHeight: 100
                         }}
@@ -371,6 +593,7 @@ export const TaskBoard: React.FC = () => {
                                 size="sm"
                                 onClick={() => setDeleteConfirm(task.id)}
                                 className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500"
+                                disabled={saving}
                               >
                                 <Trash2 size={12} />
                               </Button>
@@ -384,8 +607,8 @@ export const TaskBoard: React.FC = () => {
                                 type="text"
                                 defaultValue={task.title}
                                 autoFocus
-                                onBlur={(e) => {
-                                  updateTask(task.id, { title: e.target.value });
+                                onBlur={async (e) => {
+                                  await updateTask(task.id, { title: e.target.value });
                                   handleEditEnd();
                                 }}
                                 onKeyDown={(e) => handleKeyDown(e, task.id, 'title', e.currentTarget.value)}
@@ -407,8 +630,8 @@ export const TaskBoard: React.FC = () => {
                               <textarea
                                 defaultValue={task.description}
                                 autoFocus
-                                onBlur={(e) => {
-                                  updateTask(task.id, { description: e.target.value });
+                                onBlur={async (e) => {
+                                  await updateTask(task.id, { description: e.target.value });
                                   handleEditEnd();
                                 }}
                                 onKeyDown={(e) => {
@@ -465,14 +688,16 @@ export const TaskBoard: React.FC = () => {
                 variant="outline"
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1"
+                disabled={saving}
               >
                 Cancel
               </Button>
               <Button
                 onClick={() => deleteTask(deleteConfirm)}
                 className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                disabled={saving}
               >
-                Delete
+                {saving ? <Loader className="w-4 h-4 animate-spin" /> : 'Delete'}
               </Button>
             </div>
           </div>
