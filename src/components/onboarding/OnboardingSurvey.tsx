@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Sparkles, Users, Target, Sun, Moon, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Sparkles, Users, Target, Sun, Moon, Check, GraduationCap, Briefcase, Building2, Store, Rocket, Wand2, Palette, Zap, BarChart3, BookOpen, Handshake, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useAppStore } from '../../stores/useAppStore';
@@ -19,21 +19,21 @@ interface OnboardingSurveyProps {
 }
 
 const ROLES = [
-  { id: 'student', label: 'Student', icon: '🎓', description: 'Learning and academic projects' },
-  { id: 'freelancer', label: 'Freelancer', icon: '💼', description: 'Independent contractor or consultant' },
-  { id: 'employee', label: 'Employee', icon: '👔', description: 'Working at a company or organization' },
-  { id: 'business-owner', label: 'Business Owner', icon: '🏢', description: 'Running an established business' },
-  { id: 'founder', label: 'Founder', icon: '🚀', description: 'Building a startup or new venture' },
-  { id: 'other', label: 'Other', icon: '✨', description: 'Something else entirely' },
+  { id: 'student', label: 'Student', icon: GraduationCap, description: 'Learning and academic projects' },
+  { id: 'freelancer', label: 'Freelancer', icon: Briefcase, description: 'Independent contractor or consultant' },
+  { id: 'employee', label: 'Employee', icon: Building2, description: 'Working at a company or organization' },
+  { id: 'business-owner', label: 'Business Owner', icon: Store, description: 'Running an established business' },
+  { id: 'founder', label: 'Founder', icon: Rocket, description: 'Building a startup or new venture' },
+  { id: 'other', label: 'Other', icon: Wand2, description: 'Something else entirely' },
 ];
 
 const GOALS = [
-  { id: 'design', label: 'Design & Creative Work', icon: '🎨' },
-  { id: 'productivity', label: 'Boost Productivity', icon: '⚡' },
-  { id: 'business', label: 'Business Operations', icon: '📊' },
-  { id: 'learning', label: 'Learning & Development', icon: '📚' },
-  { id: 'collaboration', label: 'Team Collaboration', icon: '🤝' },
-  { id: 'automation', label: 'Workflow Automation', icon: '🔄' },
+  { id: 'design', label: 'Design & Creative Work', icon: Palette },
+  { id: 'productivity', label: 'Boost Productivity', icon: Zap },
+  { id: 'business', label: 'Business Operations', icon: BarChart3 },
+  { id: 'learning', label: 'Learning & Development', icon: BookOpen },
+  { id: 'collaboration', label: 'Team Collaboration', icon: Handshake },
+  { id: 'automation', label: 'Workflow Automation', icon: RotateCcw },
 ];
 
 const EXPERIENCE_LEVELS = [
@@ -200,7 +200,9 @@ export const OnboardingSurvey: React.FC<OnboardingSurveyProps> = ({ onComplete }
                     )}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{role.icon}</div>
+                      <div className="w-8 h-8 flex items-center justify-center">
+                        <role.icon size={24} className="text-slate-600 dark:text-slate-400" />
+                      </div>
                       <div className="flex-1">
                         <div className="font-medium text-slate-900 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                           {role.label}
@@ -285,7 +287,9 @@ export const OnboardingSurvey: React.FC<OnboardingSurveyProps> = ({ onComplete }
                     )}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{goal.icon}</div>
+                      <div className="w-8 h-8 flex items-center justify-center">
+                        <goal.icon size={24} className="text-slate-600 dark:text-slate-400" />
+                      </div>
                       <div className="flex-1">
                         <div className="font-medium text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                           {goal.label}
