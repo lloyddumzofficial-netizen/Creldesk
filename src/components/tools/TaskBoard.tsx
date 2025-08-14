@@ -526,9 +526,7 @@ export const TaskBoard: React.FC = () => {
             )}
             <Button
               variant="ghost"
-              size="sm"
               onClick={toggleTheme}
-              className="p-2"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
