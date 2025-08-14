@@ -152,7 +152,7 @@ export const ProposalGenerator: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Form */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-4">
           <Card padding="md">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Basic Information</h3>
             <div className="space-y-4">
@@ -271,10 +271,10 @@ export const ProposalGenerator: React.FC = () => {
         </div>
 
         {/* Preview */}
-        <div className="sticky top-6">
+        <div className="lg:sticky lg:top-6 lg:h-fit">
           <Card padding="md">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Preview</h3>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-sm max-h-[800px] overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 text-sm max-h-[calc(100vh-300px)] overflow-y-auto">
               {/* Header */}
               <div className="text-center mb-6 border-b-2 border-turquoise-500 pb-4">
                 <h1 className="text-2xl font-bold text-turquoise-600 dark:text-turquoise-400 mb-2">

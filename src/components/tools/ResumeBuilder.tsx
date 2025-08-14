@@ -1123,7 +1123,7 @@ export const ResumeBuilder: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Form Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-4">
           {/* Personal Information */}
           <Card padding="md">
             <div className="flex items-center space-x-2 mb-4">
@@ -1132,7 +1132,7 @@ export const ResumeBuilder: React.FC = () => {
             </div>
             
             {/* Profile Image Upload */}
-            <div className="mb-6">
+            <div className="bg-white rounded-lg shadow-lg p-4 border border-slate-200 dark:border-slate-600 max-h-[calc(100vh-300px)] overflow-y-auto">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                 Profile Photo
               </label>
@@ -1535,7 +1535,7 @@ export const ResumeBuilder: React.FC = () => {
         </div>
 
         {/* Preview Section */}
-        <div className="sticky top-6 space-y-4">
+        <div className="lg:col-span-1 lg:sticky lg:top-6 lg:h-fit">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Eye size={20} className="text-blue-500" />

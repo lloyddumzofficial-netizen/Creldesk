@@ -130,7 +130,7 @@ export const ColorPicker: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Color Picker */}
-        <Card padding="lg">
+        <Card padding="lg" className="lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto">
           <div className="text-center space-y-6">
             <div className="flex items-center justify-center space-x-2 mb-4">
               <Pipette size={20} className="text-turquoise-500" />
@@ -243,7 +243,7 @@ export const ColorPicker: React.FC = () => {
         </Card>
 
         {/* Color Information */}
-        <Card padding="lg">
+        <Card padding="lg" className="lg:sticky lg:top-6 lg:h-fit">
           <div className="flex items-center space-x-2 mb-6">
             <Eye size={20} className="text-turquoise-500" />
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Color Information</h3>

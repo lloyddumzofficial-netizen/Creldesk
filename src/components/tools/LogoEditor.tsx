@@ -225,7 +225,7 @@ export const LogoEditor: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Properties Panel */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-2">
           {selectedTool === 'text' && (
             <Card padding="md">
               <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-4">Text Properties</h3>
@@ -281,7 +281,7 @@ export const LogoEditor: React.FC = () => {
         </div>
 
         {/* Canvas */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 lg:sticky lg:top-6 lg:h-fit">
           <Card className="p-4">
             <canvas
               ref={canvasRef}

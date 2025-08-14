@@ -178,7 +178,7 @@ export const QRCodeGenerator: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Settings */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-4">
           {/* QR Type Selection */}
           <Card padding="md">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">QR Code Type</h3>
@@ -383,7 +383,7 @@ export const QRCodeGenerator: React.FC = () => {
         </div>
 
         {/* Preview & Download */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
           <Card padding="lg">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 text-center">QR Code Preview</h3>
             <div className="flex justify-center mb-6">
