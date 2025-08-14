@@ -73,30 +73,30 @@ const DEFAULT_TAX_RATES: TaxRate[] = [
 
 export const InvoiceGenerator: React.FC = () => {
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
-    invoiceNumber: '',
-    date: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    poNumber: '',
-    from: {
-      name: '',
-      email: '',
     invoiceNumber: `INV-${Date.now()}`,
     date: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    poNumber: '',
     from: {
       name: '',
       email: '',
       address: '',
       phone: '',
+      website: '',
     },
     to: {
       name: '',
       email: '',
       address: '',
+      phone: '',
     },
     items: [],
+    taxRates: DEFAULT_TAX_RATES,
     subtotal: 0,
-    tax: 0,
+    totalTax: 0,
+    discount: 0,
+    discountType: 'percentage',
+    shipping: 0,
     total: 0,
     notes: '',
     terms: 'Payment is due within 30 days of invoice date. Late payments may incur a 1.5% monthly service charge.',
@@ -110,7 +110,7 @@ export const InvoiceGenerator: React.FC = () => {
   const { saveProject } = useAppStore();
   const { toast } = useToast();
 
-  const renderInvoiceTemplate = (data: InvoiceData, template: string) => {
+  const renderInvoiceTemplate = (data: InvoiceData = invoiceData, template: string = invoiceData.template) => {
     const templateStyles = {
       modern: {
         headerBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -232,7 +232,7 @@ export const InvoiceGenerator: React.FC = () => {
             ` : ''}
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid ${style.borderColor};">
               <span>Tax:</span>
-              <span>${data.currency}${data.tax.toFixed(2)}</span>
+              <span>${data.currency}${data.totalTax.toFixed(2)}</span>
             </div>
             <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 18px; font-weight: bold; background: ${style.headerBg}; color: ${style.headerColor}; margin-top: 10px; padding-left: 15px; padding-right: 15px; border-radius: 8px;">
               <span>Total:</span>
@@ -930,24 +930,6 @@ ${invoiceData.from.name}`;
           </div>
         </Card>
       )}
-        {/* Template Preview */}
-        <Card padding="md">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Template Preview</h3>
-          <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-            <div 
-              className="p-6 text-sm transform scale-75 origin-top-left"
-              style={{ width: '133.33%', height: 'auto' }}
-            >
-              {renderInvoiceTemplate()}
-            </div>
-          </div>
-          <div className="mt-3 text-center">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Preview of {settings.template.charAt(0).toUpperCase() + settings.template.slice(1)} template
-            </p>
-          </div>
-        </Card>
-
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Form */}
