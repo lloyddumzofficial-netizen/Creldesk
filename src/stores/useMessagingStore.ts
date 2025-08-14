@@ -84,6 +84,8 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
         return;
       }
 
+      console.log('Searching users with query:', query);
+
       // Check if query is a UUID (user ID search)
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
       
@@ -94,14 +96,21 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
         .limit(10);
 
       if (isUUID) {
+        console.log('Searching by UUID:', query);
         supabaseQuery = supabaseQuery.eq('id', query);
       } else {
+        console.log('Searching by name/email:', query);
         supabaseQuery = supabaseQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%`);
       }
 
       const { data, error } = await supabaseQuery;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error searching users:', error);
+        throw error;
+      }
+
+      console.log('Search results:', data);
 
       // Get presence data separately for found users
       const userIds = (data || []).map(profile => profile.id);
@@ -128,10 +137,11 @@ export const useMessagingStore = create<MessagingStore>((set, get) => ({
         };
       });
 
+      console.log('Formatted users:', users);
       set({ searchResults: users });
     } catch (error) {
       console.error('Error searching users:', error);
-      set({ error: `Failed to search users: ${error.message}` });
+      set({ error: `Failed to search users: ${error?.message || 'Unknown error'}` });
     } finally {
       set({ isLoading: false });
     }

@@ -86,13 +86,14 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
 
   // Search users when query changes
   useEffect(() => {
-    if (!query.trim() || query.length < 2) {
-      set({ searchResults: [] });
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      useMessagingStore.setState({ searchResults: [] });
       return;
     }
 
     const debounceTimer = setTimeout(() => {
       if (searchQuery.trim() && searchQuery.length >= 2) {
+        console.log('Triggering user search for:', searchQuery);
         searchUsers(searchQuery);
       }
     }, 500); // Increased debounce time
@@ -125,7 +126,7 @@ export const MessagingSystem: React.FC<MessagingSystemProps> = ({ isOpen, onClos
       await loadConversations();
       
       // Find and set the conversation
-      const updatedConversations = get().conversations;
+      const updatedConversations = useMessagingStore.getState().conversations;
       const conversation = updatedConversations.find(c => c.id === conversationId);
       if (conversation) {
         setCurrentConversation(conversation);

@@ -31,7 +31,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (mode === 'login') {
       setStoreRememberMe(rememberMe);
       const success = await login(formData.email, formData.password);
-      if (success) onClose();
+      if (success) {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          onClose();
+        }, 200);
+      }
     } else if (mode === 'register') {
       if (formData.password !== formData.confirmPassword) {
         // You could set a local error here for password mismatch
@@ -39,7 +44,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
       setStoreRememberMe(rememberMe);
       const success = await register(formData.email, formData.password, formData.name);
-      if (success) onClose();
+      if (success) {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          onClose();
+        }, 200);
+      }
     } else if (mode === 'reset') {
       const success = await resetPassword(formData.email);
       if (success) {
@@ -52,7 +62,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleGoogleSignIn = async () => {
     setStoreRememberMe(rememberMe);
     const success = await signInWithGoogle();
-    if (success) onClose();
+    if (success) {
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        onClose();
+      }, 200);
+    }
   };
   const resetForm = () => {
     setFormData({ email: '', password: '', name: '', confirmPassword: '' });

@@ -125,6 +125,9 @@ function App() {
     );
   }
 
+  // Debug logging
+  console.log('App render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'user:', user?.id);
+
   // Show landing page if user is not authenticated
   if (!isAuthenticated) {
     return <LandingPage />;

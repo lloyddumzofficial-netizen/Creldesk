@@ -83,11 +83,16 @@ export const useAuthStore = create<AuthStore>()(
 
           if (session) {
             // Get user profile
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', session.user.id)
               .single();
+
+            if (profileError) {
+              console.error('Error loading profile:', profileError);
+              // Continue without profile if it doesn't exist yet
+            }
 
             set({
               session,
@@ -102,9 +107,6 @@ export const useAuthStore = create<AuthStore>()(
 
             // Add session start event
             get().addSessionEvent('session_restored');
-            
-            // Start session monitoring
-            get().startSessionMonitoring();
           } else {
             set({
               session: null,
@@ -118,13 +120,20 @@ export const useAuthStore = create<AuthStore>()(
 
           // Listen for auth changes
           supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state change:', event, session?.user?.id);
+            
             if (event === 'SIGNED_IN' && session) {
               // Get user profile on sign in
-              const { data: profile } = await supabase
+              const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
+
+              if (profileError) {
+                console.error('Error loading profile on sign in:', profileError);
+                // Continue without profile if it doesn't exist yet
+              }
 
               set({
                 session,
@@ -133,14 +142,12 @@ export const useAuthStore = create<AuthStore>()(
                 sessionExpiry: session.expires_at ? new Date(session.expires_at).getTime() : null,
                 lastActivity: Date.now(),
                 isAuthenticated: true,
+                isLoading: false,
                 error: null
               });
 
               // Add session event
               get().addSessionEvent('signed_in');
-              
-              // Start session monitoring
-              get().startSessionMonitoring();
             } else if (event === 'SIGNED_OUT') {
               get().addSessionEvent('signed_out');
               set({
@@ -151,6 +158,7 @@ export const useAuthStore = create<AuthStore>()(
                 sessionWarningShown: false,
                 isSessionExpiring: false,
                 isAuthenticated: false,
+                isLoading: false,
                 error: null
               });
             } else if (event === 'TOKEN_REFRESHED' && session) {
@@ -351,11 +359,16 @@ export const useAuthStore = create<AuthStore>()(
 
           if (data.user && data.session) {
             // Get user profile
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', data.user.id)
               .single();
+
+            if (profileError) {
+              console.error('Error loading profile during login:', profileError);
+              // Continue without profile if it doesn't exist yet
+            }
 
             set({
               user: data.user,
@@ -368,6 +381,9 @@ export const useAuthStore = create<AuthStore>()(
               error: null
             });
             get().addSessionEvent('login_success');
+            
+            // Force a small delay to ensure state is properly set
+            await new Promise(resolve => setTimeout(resolve, 100));
             return true;
           }
 
@@ -435,11 +451,16 @@ export const useAuthStore = create<AuthStore>()(
             // If email confirmation is disabled, user will be automatically signed in
             if (data.session) {
               // Get user profile
-              const { data: profile } = await supabase
+              const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', data.user.id)
                 .single();
+
+              if (profileError) {
+                console.error('Error loading profile during registration:', profileError);
+                // Continue without profile if it doesn't exist yet
+              }
 
               set({
                 user: data.user,
@@ -452,6 +473,9 @@ export const useAuthStore = create<AuthStore>()(
                 error: null
               });
               get().addSessionEvent('register_success');
+              
+              // Force a small delay to ensure state is properly set
+              await new Promise(resolve => setTimeout(resolve, 100));
             } else {
               // Email confirmation required
               set({
