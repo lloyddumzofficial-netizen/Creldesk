@@ -110,7 +110,7 @@ export const Header: React.FC = () => {
             whileHover={{ scale: 1.05 }}
           >
             <img 
-              src="/src/public/WHITE LOGO CRELDESK@500x 1.png" 
+              src="/WHITE LOGO CRELDESK@500x 1.png" 
               alt="Creldesk" 
               className="h-10 w-auto brightness-0 dark:brightness-100"
             />

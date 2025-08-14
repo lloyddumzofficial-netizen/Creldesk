@@ -178,7 +178,7 @@ export const LandingPage: React.FC = () => {
               transition={{ duration: 0.6 }}
             >
               <img 
-                src="/src/public/WHITE LOGO CRELDESK@500x 1.png" 
+                src="/WHITE LOGO CRELDESK@500x 1.png" 
                 alt="Creldesk" 
                 className="h-10 w-auto"
               />
